@@ -119,8 +119,18 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 		
 			//それ以外(記号)
 			}else{
-				token_str += next_char;
-				next_token = new Token(token_str, TOK_SYMBOL, line_num);
+				if(next_char == '*' ||
+						next_char == '+' ||
+						next_char == '-' ||
+						next_char == '=' ){
+					token_str += next_char;
+					next_token = new Token(token_str, TOK_SYMBOL, line_num);
+
+				//解析不能字句
+				}else{
+					SAFE_DELETE(tokens);
+					return NULL;
+				}
 			}
 		
 			//Tokensに追加
