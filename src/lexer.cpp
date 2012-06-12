@@ -122,7 +122,13 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 				if(next_char == '*' ||
 						next_char == '+' ||
 						next_char == '-' ||
-						next_char == '=' ){
+						next_char == '=' ||
+						next_char == ';' ||
+						next_char == ',' ||
+						next_char == '(' ||
+						next_char == ')' ||
+						next_char == '{' ||
+						next_char == '}'){
 					token_str += next_char;
 					next_token = new Token(token_str, TOK_SYMBOL, line_num);
 

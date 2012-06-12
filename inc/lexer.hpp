@@ -4,11 +4,10 @@
 #include<llvm/Support/raw_ostream.h>
 #include<cstdio>
 #include<cstdlib>
-#include<string>
-#include<map>
 #include<fstream>
-#include<vector>
 #include<list>
+#include<string>
+#include<vector>
 #include"APP.hpp"
 
 
