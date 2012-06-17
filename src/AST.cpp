@@ -4,55 +4,6 @@
 /**
   * デストラクタ
   */
-CallExprAST::~CallExprAST(){
-	for(int i=0; i<Args.size(); i++){
-		SAFE_DELETE(Args[i]);
-	}
-}
-
-
-/**
-  * デストラクタ
-  */
-FunctionStmtAST::~FunctionStmtAST(){
-	//delete variable_declaration
-	for(int i=0; i<VariableDecls.size(); i++){
-		SAFE_DELETE(VariableDecls[i]);
-	}
-	VariableDecls.clear();
-
-	//delete statements
-	for(int i=0; i<StmtLists.size(); i++){
-		SAFE_DELETE(StmtLists[i]);
-	}
-	StmtLists.clear();
-}
-
-
-/**
-  * VariableDeclAST(変数宣言追加)メソッド
-  * @param  VariableDeclAST
-  * @retirm true
-  */
-bool FunctionStmtAST::addVariableDeclaration(VariableDeclAST *vdecl){
-		VariableDecls.push_back(vdecl);
-		return true;
-}
-
-
-
-/**
-  * デストラクタ
-  */
-FunctionAST::~FunctionAST(){
-	SAFE_DELETE(Proto);
-	SAFE_DELETE(Body);
-}
-
-
-/**
-  * デストラクタ
-  */
 TranslationUnitAST::~TranslationUnitAST(){
 	for(int i=0; i<Prototypes.size(); i++){
 		SAFE_DELETE(Prototypes[i]);
@@ -93,4 +44,53 @@ bool TranslationUnitAST::empty(){
 	else
 		return false;
 }
+
+
+/**
+  * デストラクタ
+  */
+FunctionAST::~FunctionAST(){
+	SAFE_DELETE(Proto);
+	SAFE_DELETE(Body);
+}
+
+
+/**
+  * デストラクタ
+  */
+FunctionStmtAST::~FunctionStmtAST(){
+	//delete variable_declaration
+	for(int i=0; i<VariableDecls.size(); i++){
+		SAFE_DELETE(VariableDecls[i]);
+	}
+	VariableDecls.clear();
+
+	//delete statements
+	for(int i=0; i<StmtLists.size(); i++){
+		SAFE_DELETE(StmtLists[i]);
+	}
+	StmtLists.clear();
+}
+
+
+/**
+  * VariableDeclAST(変数宣言追加)メソッド
+  * @param  VariableDeclAST
+  * @retirm true
+  */
+bool FunctionStmtAST::addVariableDeclaration(VariableDeclAST *vdecl){
+		VariableDecls.push_back(vdecl);
+		return true;
+}
+
+
+/**
+  * デストラクタ
+  */
+CallExprAST::~CallExprAST(){
+	for(int i=0; i<Args.size(); i++){
+		SAFE_DELETE(Args[i]);
+	}
+}
+
 

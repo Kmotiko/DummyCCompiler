@@ -88,14 +88,19 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 		
 			//数字
 			}else if(isdigit(next_char)){
-				token_str += next_char;
-				next_char = cur_line.at(index++);
-				while(isdigit(next_char)){
+				if(atoi(&next_char)==0){
+					token_str += next_char;
+					next_token = new Token(token_str, TOK_DIGIT, line_num);
+				}else{
 					token_str += next_char;
 					next_char = cur_line.at(index++);
+					while(isdigit(next_char)){
+						token_str += next_char;
+						next_char = cur_line.at(index++);
+					}
+					next_token = new Token(token_str, TOK_DIGIT, line_num);
+					index--;
 				}
-				next_token = new Token(token_str, TOK_DIGIT, line_num);
-				index--;
 		
 			//コメント or '/'
 			}else if(next_char == '/'){
@@ -134,6 +139,7 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 
 				//解析不能字句
 				}else{
+					fprintf(stderr, "unclear token : %c", next_char);
 					SAFE_DELETE(tokens);
 					return NULL;
 				}

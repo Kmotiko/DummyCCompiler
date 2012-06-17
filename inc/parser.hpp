@@ -43,21 +43,21 @@ typedef class Parser{
 		/**
 		  各種構文解析メソッド
 		  */
-		BaseAST *visitPrimaryExpression();
-		BaseAST *visitPostfixExpression();
-		BaseAST *visitMultiplicativeExpression(BaseAST *lhs);
-		BaseAST *visitAdditiveExpression(BaseAST *lhs);
-		BaseAST *visitAssignmentExpression();
+		bool visitTranslationUnit();
+		bool visitExternalDeclaration(TranslationUnitAST *tunit);
+		PrototypeAST *visitFunctionDeclaration();
+		FunctionAST *visitFunctionDefinition();
+		PrototypeAST *visitPrototype();
 		FunctionStmtAST *visitFunctionStatement(PrototypeAST *proto);
+		VariableDeclAST *visitVariableDeclaration();
 		BaseAST *visitStatement();
 		BaseAST *visitExpressionStatement();
 		BaseAST *visitJumpStatement();
-		bool visitExternalDeclaration(TranslationUnitAST *tunit);
-		VariableDeclAST *visitVariableDeclaration();
-		PrototypeAST *visitPrototype();
-		PrototypeAST *visitFunctionDeclaration();
-		FunctionAST *visitFunctionDefinition();
-		bool visitTranslationUnit();
+		BaseAST *visitAssignmentExpression();
+		BaseAST *visitAdditiveExpression(BaseAST *lhs);
+		BaseAST *visitMultiplicativeExpression(BaseAST *lhs);
+		BaseAST *visitPostfixExpression();
+		BaseAST *visitPrimaryExpression();
 
 
 	protected:

@@ -34,16 +34,16 @@ class CodeGen{
 
 
 	private:
-		Value *generateVariable(VariableAST *var);
+		bool generateTranslationUnit(TranslationUnitAST &tunit, std::string name);
+		Function *generateFunctionDefinition(FunctionAST *func, Module *mod);
+		Function *generatePrototype(PrototypeAST *proto, Module *mod);
+		Value *generateFunctionStatement(FunctionStmtAST *func_stmt);
 		Value *generateVariableDeclaration(VariableDeclAST *vdecl);
+		Value *generateStatement(BaseAST *stmt);
+		Value *generateBinaryExpression(BinaryExprAST *bin_expr);
 		Value *generateCallExpression(CallExprAST *call_expr);
 		Value *generateJumpStatement(JumpStmtAST *jump_stmt);
-		Value *generateBinaryExpression(BinaryExprAST *bin_expr);
-		Value *generateStatement(BaseAST *stmt);
-		Value *generateFunctionStatement(FunctionStmtAST *func_stmt);
-		Function *generatePrototype(PrototypeAST *proto, Module *mod);
-		Function *generateFunctionDefinition(FunctionAST *func, Module *mod);
-		bool generateTranslationUnit(TranslationUnitAST &tunit, std::string name);
+		Value *generateVariable(VariableAST *var);
 
 
 };
