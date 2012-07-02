@@ -1,17 +1,15 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
+#include<algorithm>
 #include<cstdio>
 #include<cstdlib>
 #include<map>
 #include<string>
 #include<vector>
-#include<llvm/DerivedTypes.h>
-#include<llvm/Support/IRBuilder.h>
-#include<llvm/Support/raw_ostream.h>
-#include "APP.hpp"
-#include "AST.hpp"
-#include "lexer.hpp"
+#include"APP.hpp"
+#include"AST.hpp"
+#include"lexer.hpp"
 using namespace llvm;
 
 
@@ -23,7 +21,6 @@ typedef class Parser{
 
 	private:
 		TokenSet *Tokens;
-		IRBuilder<> *Builder;
 		TranslationUnitAST *TU;
 
 		//意味解析用各種識別子表

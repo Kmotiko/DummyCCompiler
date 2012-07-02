@@ -81,6 +81,7 @@ Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
 	if(!func){
 		return NULL;
 	}
+	CurFunc = func;
 	BasicBlock *bblock=BasicBlock::Create(getGlobalContext(),
 									"entry",func);
 	Builder->SetInsertPoint(bblock);
@@ -95,8 +96,7 @@ Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
   * @param  PrototypeAST, Module
   * @return 生成したFunctionのポインタ
   */
-Function *CodeGen::generatePrototype(PrototypeAST *proto,
-		Module *mod){
+Function *CodeGen::generatePrototype(PrototypeAST *proto, Module *mod){
 	//already declared?
 	Function *func=mod->getFunction(proto->getName());
 	if(func){
@@ -127,8 +127,7 @@ Function *CodeGen::generatePrototype(PrototypeAST *proto,
 	//set names
 	Function::arg_iterator arg_iter=func->arg_begin();
 	for(int i=0; i<proto->getParamNum(); i++){
-		arg_iter->setName(proto->getParamName(i));
-		ValueMap[proto->getParamName(i)]=(Value*)arg_iter;
+		arg_iter->setName(proto->getParamName(i).append("_arg"));
 	}
 
 	return func;
@@ -146,6 +145,7 @@ Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
 	VariableDeclAST *vdecl;
 	Value *v;
 	for(int i=0; ; i++){
+		//最後まで見たら終了
 		if(!func_stmt->getVariableDecl(i))
 			break;
 
@@ -184,9 +184,10 @@ Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
 	//if args alloca
 	if(vdecl->getType()==VariableDeclAST::param){
 		//store args
-		Builder->CreateStore(ValueMap[vdecl->getName()], alloca);
+		ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+		Builder->CreateStore(vs_table.lookup(vdecl->getName().append("_arg")), alloca);
 	}
-	ValueMap[vdecl->getName()]=alloca;
+	//ValueMap[vdecl->getName()]=alloca;
 	return alloca;
 }
 
@@ -226,7 +227,8 @@ Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 	if(bin_expr->getOp()=="="){
 		//lhs is variable
 		VariableAST *lhs_var=dyn_cast<VariableAST>(lhs);
-		lhs_v = ValueMap[lhs_var->getName()];
+		ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+		lhs_v = vs_table.lookup(lhs_var->getName());
 
 	//other operand
 	}else{
@@ -242,9 +244,7 @@ Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 		//Number?
 		else if(isa<NumberAST>(lhs)){
 			NumberAST *num=dyn_cast<NumberAST>(lhs);
-			lhs_v=ConstantInt::get(
-					Type::getInt32Ty(getGlobalContext()),
-					num->getNumberValue());
+			lhs_v=generateNumber(num->getNumberValue());
 		}
 	}
 
@@ -260,9 +260,7 @@ Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 	//Number?
 	else if(isa<NumberAST>(rhs)){
 		NumberAST *num=dyn_cast<NumberAST>(rhs);
-		rhs_v=ConstantInt::get(
-				Type::getInt32Ty(getGlobalContext()),
-				num->getNumberValue());
+		rhs_v=generateNumber(num->getNumberValue());
 	}
 	
 	
@@ -294,6 +292,8 @@ Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 	std::vector<Value*> arg_vec;
 	BaseAST *arg;
 	Value *arg_v;
+	Function *func=Mod->getFunction("main");
+	ValueSymbolTable &vs_table = func->getValueSymbolTable();
 	for(int i=0; ; i++){
 		if(!(arg=call_expr->getArgs(i)))
 			break;
@@ -302,6 +302,16 @@ Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 		if(isa<CallExprAST>(arg))
 			arg_v=generateCallExpression(dyn_cast<CallExprAST>(arg));
 
+		//isBinaryExpr
+		else if(isa<BinaryExprAST>(arg)){
+			BinaryExprAST *bin_expr = dyn_cast<BinaryExprAST>(arg);
+			arg_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(arg));
+			if(bin_expr->getOp()=="="){
+				VariableAST *var= dyn_cast<VariableAST>(bin_expr->getLHS());
+				arg_v=Builder->CreateLoad(vs_table.lookup(var->getName()), "arg_val");
+			}
+		}
+
 		//isVar
 		else if(isa<VariableAST>(arg))
 			arg_v=generateVariable(dyn_cast<VariableAST>(arg));
@@ -309,16 +319,12 @@ Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 		//isNumber
 		else if(isa<NumberAST>(arg)){
 			NumberAST *num=dyn_cast<NumberAST>(arg);
-			arg_v=ConstantInt::get(
-					Type::getInt32Ty(getGlobalContext()),
-					num->getNumberValue());
+			arg_v=generateNumber(num->getNumberValue());
 		}
 		arg_vec.push_back(arg_v);
 	}
-	return Builder->CreateCall(
-							Mod->getFunction(call_expr->getCallee()),
-							arg_vec,"call_tmp"
-							);
+	return Builder->CreateCall( Mod->getFunction(call_expr->getCallee()),
+										arg_vec,"call_tmp" );
 }
 
 
@@ -334,12 +340,10 @@ Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
 		ret_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(expr));
 	}else if(isa<VariableAST>(expr)){
 		VariableAST *var=dyn_cast<VariableAST>(expr);
-		ret_v=Builder->CreateLoad(ValueMap[var->getName()]);
+		ret_v = generateVariable(var);
 	}else if(isa<NumberAST>(expr)){
 		NumberAST *num=dyn_cast<NumberAST>(expr);
-		ret_v=ConstantInt::get(
-					Type::getInt32Ty(getGlobalContext()),
-					num->getNumberValue());
+		ret_v=generateNumber(num->getNumberValue());
 
 	}
 	Builder->CreateRet(ret_v);
@@ -352,7 +356,13 @@ Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   * @return  生成したValueのポインタ
   */
 Value *CodeGen::generateVariable(VariableAST *var){
-	return Builder->CreateLoad(ValueMap[var->getName()],"var_tmp");
+	ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+	return Builder->CreateLoad(vs_table.lookup(var->getName()), "var_tmp");
 }
 
 
+Value *CodeGen::generateNumber(int value){
+	return ConstantInt::get(
+			Type::getInt32Ty(getGlobalContext()),
+			value);
+}

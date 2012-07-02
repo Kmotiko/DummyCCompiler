@@ -190,7 +190,6 @@ class  BinaryExprAST : public BaseAST{
   * ";"を表すAST
   */
 class NullExprAST : public BaseAST{
-
 	public:
 		NullExprAST() : BaseAST(NullExprID){}
 		static inline bool classof(NullExprAST const*){return true;}

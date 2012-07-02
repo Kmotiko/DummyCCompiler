@@ -1,7 +1,6 @@
 #ifndef LEXER_HPP
 #define LEXER_HPP
 	
-#include<llvm/Support/raw_ostream.h>
 #include<cstdio>
 #include<cstdlib>
 #include<fstream>
@@ -16,25 +15,11 @@
   */
 enum TokenType{
 	TOK_IDENTIFIER,	//識別子
-	TOK_STRING,			//文字列
 	TOK_DIGIT,			//数字
 	TOK_SYMBOL,			//記号
 	TOK_INT,				//INT
-	TOK_IF,				//IF
-	TOK_ELSE,			//ELSE
-	TOK_WHILE,			//WHILE
-	TOK_CONTINUE,		//CONTINUE
-	TOK_BREAK,			//BREAK
 	TOK_RETURN,			//RETURN
 	TOK_EOF				//EOF
-};
-
-/**
-  * 変数種別
-  */
-enum ValType{
-	TYPE_INT,
-	//TYPE_CHAR
 };
 
 

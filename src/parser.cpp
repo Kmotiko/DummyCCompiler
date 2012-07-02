@@ -100,8 +100,9 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
 
 	//prototype;
 	if(Tokens->getCurString()==";"){
-		if(PrototypeTable.find(proto->getName()) !=
-				PrototypeTable.end()){
+		if( PrototypeTable.find(proto->getName()) != PrototypeTable.end() ||
+			(FunctionTable.find(proto->getName()) != FunctionTable.end() &&
+			FunctionTable[proto->getName()] != proto->getParamNum() ) ){
 			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str()); 
 			SAFE_DELETE(proto);
 			return NULL;
@@ -128,8 +129,9 @@ FunctionAST *Parser::visitFunctionDefinition(){
 	PrototypeAST *proto=visitPrototype();
 	if(!proto){
 		return NULL;
-	}else if(PrototypeTable[proto->getName()] != 
-			proto->getParamNum()){
+	}else if( (PrototypeTable.find(proto->getName()) != PrototypeTable.end() &&
+				PrototypeTable[proto->getName()] != proto->getParamNum() ) ||
+				FunctionTable.find(proto->getName()) != FunctionTable.end()){
 			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str()); 
 			SAFE_DELETE(proto);
 			return NULL;
@@ -138,16 +140,7 @@ FunctionAST *Parser::visitFunctionDefinition(){
 	VariableTable.clear();
 	FunctionStmtAST *func_stmt = visitFunctionStatement(proto);
 	if(func_stmt){
-
-		if(FunctionTable.find(proto->getName()) ==
-				FunctionTable.end()){
-			FunctionTable[proto->getName()]=proto->getParamNum();
-		}else{
-			SAFE_DELETE(proto);
-			SAFE_DELETE(func_stmt);
-			return NULL;
-		}
-
+		FunctionTable[proto->getName()]=proto->getParamNum();
 		return new FunctionAST(proto,func_stmt);
 	}else{
 		SAFE_DELETE(proto);
@@ -204,8 +197,7 @@ PrototypeAST *Parser	::visitPrototype(){
 
 		if(Tokens->getCurType()==TOK_IDENTIFIER){
 			//引数の変数名に被りがないか確認
-			if(find(param_list.begin(), param_list.end(), 
-						Tokens->getCurString()) !=
+			if(find(param_list.begin(), param_list.end(), Tokens->getCurString()) !=
 					param_list.end()){
 				Tokens->applyTokenIndex(bkup);
 				return NULL;
@@ -253,6 +245,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 		VariableDeclAST *vdecl=new VariableDeclAST(proto->getParamName(i));
 		vdecl->setDeclType(VariableDeclAST::param);
 		func_stmt->addVariableDeclaration(vdecl);
+		VariableTable.push_back(vdecl->getName());
 	}
 
 	VariableDeclAST *var_decl;
@@ -271,9 +264,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 	}else if(var_decl=visitVariableDeclaration()){
 		while(var_decl){
 			var_decl->setDeclType(VariableDeclAST::local);
-			//if(!func_stmt->addVariableDeclaration(var_decl)){
-			if(find(VariableTable.begin(), VariableTable.end(),
-						var_decl->getName()) !=
+			if(find(VariableTable.begin(), VariableTable.end(), var_decl->getName()) !=
 					VariableTable.end()){
 				SAFE_DELETE(var_decl);
 				SAFE_DELETE(func_stmt);
@@ -381,7 +372,7 @@ BaseAST *Parser::visitExpressionStatement(){
 	if(Tokens->getCurString()==";"){
 		Tokens->getNextToken();
 		return new NullExprAST();
-	}else if(assign_expr=visitAssignmentExpression()){
+	}else if((assign_expr=visitAssignmentExpression())){
 		if(Tokens->getCurString()==";"){
 			Tokens->getNextToken();
 			return assign_expr;
@@ -431,8 +422,7 @@ BaseAST *Parser::visitAssignmentExpression(){
 	BaseAST *lhs;
 	if(Tokens->getCurType()==TOK_IDENTIFIER){
 		//変数が宣言されているか確認
-		if(find(VariableTable.begin(), VariableTable.end(), 
-					Tokens->getCurString()) !=
+		if(find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
 				VariableTable.end()){
 
 			lhs=new VariableAST(Tokens->getCurString());
@@ -456,6 +446,7 @@ BaseAST *Parser::visitAssignmentExpression(){
 		}
 	}
 
+	//additive_expression
 	BaseAST *add_expr=visitAdditiveExpression(NULL);
 	if(add_expr){
 		return add_expr;
@@ -561,7 +552,6 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 				return NULL;
 			}	
 		}	
-		
 		return lhs;
 	}else{
 		return NULL;
@@ -611,25 +601,17 @@ BaseAST *Parser::visitPostfixExpression(){
 		Tokens->getNextToken();
 		//argument list
 		std::vector<BaseAST*> args;
-		if(Tokens->getCurType()==TOK_IDENTIFIER &&
-				find(VariableTable.begin(), VariableTable.end(),
-					Tokens->getCurString()) !=
-				VariableTable.end()){
-			args.push_back(
-				new VariableAST(Tokens->getCurString())
-						);
-			Tokens->getNextToken();
-
+		BaseAST *assign_expr=visitAssignmentExpression();
+		if(assign_expr){
+			args.push_back(assign_expr);
 			while(Tokens->getCurType()==TOK_SYMBOL &&
 					Tokens->getCurString()==","){
 				Tokens->getNextToken();
 
 				//IDENTIFIER
-				if(Tokens->getCurType()==TOK_IDENTIFIER){
-					args.push_back(
-						new VariableAST(Tokens->getCurString()) 
-						);
-					Tokens->getNextToken();
+				assign_expr=visitAssignmentExpression();
+				if(assign_expr){
+					args.push_back(assign_expr);
 				}else{
 					break;
 				}
@@ -673,8 +655,7 @@ BaseAST *Parser::visitPrimaryExpression(){
 
 	//VARIABLE_IDENTIFIER
 	if(Tokens->getCurType()==TOK_IDENTIFIER &&
-		(find(VariableTable.begin(), VariableTable.end(),
-			Tokens->getCurString()) !=
+		(find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
 		VariableTable.end()) ){
 		std::string var_name=Tokens->getCurString();
 		Tokens->getNextToken();

@@ -7,11 +7,11 @@
 #include<map>
 #include<string>
 #include<vector>
-#include<llvm/DerivedTypes.h>
 #include<llvm/LLVMContext.h>
 #include<llvm/Module.h>
 #include<llvm/Support/Casting.h>
 #include<llvm/Support/IRBuilder.h>
+#include<llvm/ValueSymbolTable.h>
 #include"APP.hpp"
 #include"AST.hpp"
 using namespace llvm;
@@ -22,9 +22,9 @@ using namespace llvm;
   */
 class CodeGen{
 	private:
-		std::map<std::string, Value*> ValueMap;
-		Module *Mod;
-		IRBuilder<> *Builder;
+		Function *CurFunc;		//現在コード生成中のFunction
+		Module *Mod;				//生成したModule を格納
+		IRBuilder<> *Builder;	//LLVM-IRを生成するIRBuilder クラス
 
 	public:
 		CodeGen();
@@ -44,6 +44,7 @@ class CodeGen{
 		Value *generateCallExpression(CallExprAST *call_expr);
 		Value *generateJumpStatement(JumpStmtAST *jump_stmt);
 		Value *generateVariable(VariableAST *var);
+		Value *generateNumber(int value);
 
 
 };

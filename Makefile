@@ -55,10 +55,10 @@ clean:
 	rm -rf $(FRONT_OBJ) $(TOOL)
 
 run:
-	$(TOOL) $(SAMPLE_DIR)/test.dc -o $(SAMPLE_DIR)/test.s 
+	$(TOOL) -o $(SAMPLE_DIR)/test.ll $(SAMPLE_DIR)/test.dc 
 
 link:
-	llvm-link $(SAMPLE_DIR)/test.s ./lib/printnum.ss -S -o  $(SAMPLE_DIR)/test.so
+	llvm-link $(SAMPLE_DIR)/test.ll ./lib/printnum.ll -S -o  $(SAMPLE_DIR)/link_test.ll
 
 do:
-	lli $(SAMPLE_DIR)/test.so
+	lli $(SAMPLE_DIR)/link_test.ll

@@ -45,17 +45,6 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 			}else if(isspace(next_char)){
 				continue;
 
-			//文字列
-			}else if(next_char == '"'){
-				while ( (next_char=cur_line.at(index++))!='"' ){
-					token_str += next_char;
-					if(index==length){
-						//delete
-						return NULL;
-					}
-				}
-				next_token = new Token(token_str, TOK_STRING, line_num);
-		
 			//IDENTIFIER
 			}else if(isalpha(next_char)){
 				token_str += next_char;
@@ -70,16 +59,6 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 		
 				if(token_str == "int"){
 					next_token = new Token(token_str, TOK_INT, line_num);
-				}else if(token_str == "if"){
-					next_token = new Token(token_str, TOK_IF, line_num);
-				}else if(token_str == "else"){
-					next_token = new Token(token_str, TOK_ELSE, line_num);
-				}else if(token_str == "while"){
-					next_token = new Token(token_str, TOK_WHILE, line_num);
-				}else if(token_str == "continue"){
-					next_token = new Token(token_str, TOK_CONTINUE, line_num);
-				}else if(token_str == "break"){
-					next_token = new Token(token_str, TOK_BREAK, line_num);
 				}else if(token_str == "return"){
 					next_token = new Token(token_str, TOK_RETURN, line_num);
 				}else{
@@ -161,7 +140,6 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 				new Token(token_str, TOK_EOF, line_num)
 				);
 	}
-
 
 	//クローズ
 	ifs.close();
