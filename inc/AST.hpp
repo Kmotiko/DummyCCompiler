@@ -98,7 +98,6 @@ class PrototypeAST{
 	PrototypeAST(const std::string &name, const std::vector<std::string> &params)
 		: Name(name), Params(params){}
 	std::string getName(){return Name;}
-	bool containsVariable(std::string name);
 	std::string getParamName(int i){if(i<Params.size())return Params.at(i);return NULL;}
 	int getParamNum(){return Params.size();}
 };
@@ -114,7 +113,6 @@ class FunctionAST{
 	FunctionAST(PrototypeAST *proto, FunctionStmtAST *body):Proto(proto), Body(body){}
 	~FunctionAST();
 	std::string getName(){return Proto->getName();}
-	bool containsVariable(std::string name);
 	PrototypeAST *getPrototype(){return Proto;}
 	FunctionStmtAST *getBody(){return Body;}
 };
@@ -132,7 +130,6 @@ class FunctionStmtAST{
 	~FunctionStmtAST();
 	bool addVariableDeclaration(VariableDeclAST *vdecl);
 	bool addStatement(BaseAST *stmt){StmtLists.push_back(stmt);}
-	bool containsVariable(std::string name);
 	VariableDeclAST *getVariableDecl(int i){if(i<VariableDecls.size())return VariableDecls.at(i);else return NULL;}
 	BaseAST *getStatement(int i){if(i<StmtLists.size())return StmtLists.at(i);else return NULL;}
 };
