@@ -134,6 +134,7 @@ llvm::Function *CodeGen::generatePrototype(PrototypeAST *proto, llvm::Module *mo
 	llvm::Function::arg_iterator arg_iter=func->arg_begin();
 	for(int i=0; i<proto->getParamNum(); i++){
 		arg_iter->setName(proto->getParamName(i).append("_arg"));
+		++arg_iter;
 	}
 
 	return func;
