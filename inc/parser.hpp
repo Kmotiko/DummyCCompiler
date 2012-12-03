@@ -10,7 +10,7 @@
 #include"APP.hpp"
 #include"AST.hpp"
 #include"lexer.hpp"
-using namespace llvm;
+//using namespace llvm;
 
 
 /**

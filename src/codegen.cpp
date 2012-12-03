@@ -4,7 +4,9 @@
   * コンストラクタ
   */
 CodeGen::CodeGen(){
-	Builder = new IRBuilder<>(getGlobalContext());
+	MDB = new llvm::MDBuilder(llvm::getGlobalContext());
+	mdn = MDB->createFPMath(0.5);
+	Builder = new llvm::IRBuilder<>(llvm::getGlobalContext(), mdn);
 }
 
 /**
@@ -21,18 +23,23 @@ CodeGen::~CodeGen(){
   * @return 成功時：true　失敗時:false
   */
 bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name){
-	return generateTranslationUnit(tunit, name);
+
+	if(!generateTranslationUnit(tunit, name)){
+		return false;
+	}
+
+	return true;
 }
 
 
 /**
   * Module取得
   */
-Module &CodeGen::getModule(){
+llvm::Module &CodeGen::getModule(){
 	if(Mod)
 		return *Mod;
 	else
-		return *(new Module("null", getGlobalContext()));
+		return *(new llvm::Module("null", llvm::getGlobalContext()));
 }
 
 
@@ -42,8 +49,7 @@ Module &CodeGen::getModule(){
   * @return 成功時：true　失敗時：false　
   */
 bool CodeGen::generateTranslationUnit(TranslationUnitAST &tunit, std::string name){
-
-	Mod = new Module(name, getGlobalContext());
+	Mod = new llvm::Module(name, llvm::getGlobalContext());
 	//funtion declaration
 	for(int i=0; ; i++){
 		PrototypeAST *proto=tunit.getPrototype(i);
@@ -60,7 +66,7 @@ bool CodeGen::generateTranslationUnit(TranslationUnitAST &tunit, std::string nam
 		FunctionAST *func=tunit.getFunction(i);
 		if(!func)
 			break;
-		else if(!generateFunctionDefinition(func, Mod)){
+		else if(!(generateFunctionDefinition(func, Mod))){
 			SAFE_DELETE(Mod);
 			return false;
 		}
@@ -75,14 +81,14 @@ bool CodeGen::generateTranslationUnit(TranslationUnitAST &tunit, std::string nam
   * @param  FunctionAST Module
   * @return 生成したFunctionのポインタ
   */
-Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
-		Module *mod){
-	Function *func=generatePrototype(func_ast->getPrototype(), mod);
+llvm::Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
+		llvm::Module *mod){
+	llvm::Function *func=generatePrototype(func_ast->getPrototype(), mod);
 	if(!func){
 		return NULL;
 	}
 	CurFunc = func;
-	BasicBlock *bblock=BasicBlock::Create(getGlobalContext(),
+	llvm::BasicBlock *bblock=llvm::BasicBlock::Create(llvm::getGlobalContext(),
 									"entry",func);
 	Builder->SetInsertPoint(bblock);
 	generateFunctionStatement(func_ast->getBody());
@@ -96,9 +102,9 @@ Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
   * @param  PrototypeAST, Module
   * @return 生成したFunctionのポインタ
   */
-Function *CodeGen::generatePrototype(PrototypeAST *proto, Module *mod){
+llvm::Function *CodeGen::generatePrototype(PrototypeAST *proto, llvm::Module *mod){
 	//already declared?
-	Function *func=mod->getFunction(proto->getName());
+	llvm::Function *func=mod->getFunction(proto->getName());
 	if(func){
 		if(func->arg_size()==proto->getParamNum() && 
 				func->empty()){
@@ -110,22 +116,22 @@ Function *CodeGen::generatePrototype(PrototypeAST *proto, Module *mod){
 	}
 
 	//create arg_types
-	std::vector<Type*> int_types(proto->getParamNum(),
-								Type::getInt32Ty(getGlobalContext()));
+	std::vector<llvm::Type*> int_types(proto->getParamNum(),
+								llvm::Type::getInt32Ty(llvm::getGlobalContext()));
 
 	//create func type
-	FunctionType *func_type = FunctionType::get(
-							Type::getInt32Ty(getGlobalContext()),
+	llvm::FunctionType *func_type = llvm::FunctionType::get(
+							llvm::Type::getInt32Ty(llvm::getGlobalContext()),
 							int_types,false
 							);
 	//create function
-	func=Function::Create(func_type, 
-							Function::ExternalLinkage,
+	func=llvm::Function::Create(func_type, 
+							llvm::Function::ExternalLinkage,
 							proto->getName(),
 							mod);
 
 	//set names
-	Function::arg_iterator arg_iter=func->arg_begin();
+	llvm::Function::arg_iterator arg_iter=func->arg_begin();
 	for(int i=0; i<proto->getParamNum(); i++){
 		arg_iter->setName(proto->getParamName(i).append("_arg"));
 	}
@@ -140,17 +146,17 @@ Function *CodeGen::generatePrototype(PrototypeAST *proto, Module *mod){
   * @param  FunctionStmtAST
   * @return 最後に生成したValueのポインタ
   */
-Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
+llvm::Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
 	//insert variable decls
 	VariableDeclAST *vdecl;
-	Value *v;
+	llvm::Value *v=NULL;
 	for(int i=0; ; i++){
 		//最後まで見たら終了
 		if(!func_stmt->getVariableDecl(i))
 			break;
 
 		//create alloca
-		vdecl=dyn_cast<VariableDeclAST>(func_stmt->getVariableDecl(i));
+		vdecl=llvm::dyn_cast<VariableDeclAST>(func_stmt->getVariableDecl(i));
 		v=generateVariableDeclaration(vdecl);
 	}
 
@@ -160,9 +166,8 @@ Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
 		stmt=func_stmt->getStatement(i);
 		if(!stmt)
 			break;
-		else if(!isa<NullExprAST>(stmt))
+		else if(!llvm::isa<NullExprAST>(stmt))
 			v=generateStatement(stmt);
-
 	}
 
 	return v;
@@ -174,17 +179,17 @@ Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
   * @param VariableDeclAST
   * @return 生成したValueのポインタ
   */
-Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
+llvm::Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
 	//create alloca
-	AllocaInst *alloca=Builder->CreateAlloca(
-			Type::getInt32Ty(getGlobalContext()),
+	llvm::AllocaInst *alloca=Builder->CreateAlloca(
+			llvm::Type::getInt32Ty(llvm::getGlobalContext()),
 			0,
 			vdecl->getName());
 
 	//if args alloca
 	if(vdecl->getType()==VariableDeclAST::param){
 		//store args
-		ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+		llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 		Builder->CreateStore(vs_table.lookup(vdecl->getName().append("_arg")), alloca);
 	}
 	//ValueMap[vdecl->getName()]=alloca;
@@ -198,13 +203,13 @@ Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
   * @param  JumpStmtAST
   * @return 生成したValueのポインタ
   */
-Value *CodeGen::generateStatement(BaseAST *stmt){
-	if(isa<BinaryExprAST>(stmt)){
-		return generateBinaryExpression(dyn_cast<BinaryExprAST>(stmt));
-	}else if(isa<CallExprAST>(stmt)){
-		return generateCallExpression(dyn_cast<CallExprAST>(stmt));
-	}else if(isa<JumpStmtAST>(stmt)){
-		return generateJumpStatement(dyn_cast<JumpStmtAST>(stmt));
+llvm::Value *CodeGen::generateStatement(BaseAST *stmt){
+	if(llvm::isa<BinaryExprAST>(stmt)){
+		return generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(stmt));
+	}else if(llvm::isa<CallExprAST>(stmt)){
+		return generateCallExpression(llvm::dyn_cast<CallExprAST>(stmt));
+	}else if(llvm::isa<JumpStmtAST>(stmt)){
+		return generateJumpStatement(llvm::dyn_cast<JumpStmtAST>(stmt));
 	}else{
 		return NULL;
 	}
@@ -216,50 +221,50 @@ Value *CodeGen::generateStatement(BaseAST *stmt){
   * @param  JumpStmtAST
   * @return 生成したValueのポインタ
   */
-Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
+llvm::Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 	BaseAST *lhs=bin_expr->getLHS();
 	BaseAST *rhs=bin_expr->getRHS();
 
-	Value *lhs_v;
-	Value *rhs_v;
+	llvm::Value *lhs_v;
+	llvm::Value *rhs_v;
 
 	//assignment
 	if(bin_expr->getOp()=="="){
 		//lhs is variable
-		VariableAST *lhs_var=dyn_cast<VariableAST>(lhs);
-		ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+		VariableAST *lhs_var=llvm::dyn_cast<VariableAST>(lhs);
+		llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 		lhs_v = vs_table.lookup(lhs_var->getName());
 
 	//other operand
 	}else{
 		//lhs=?
 		//Binary?
-		if(isa<BinaryExprAST>(lhs))
-			lhs_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(lhs));
+		if(llvm::isa<BinaryExprAST>(lhs))
+			lhs_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(lhs));
 
 		//Variable?
-		else if(isa<VariableAST>(lhs))
-			lhs_v=generateVariable(dyn_cast<VariableAST>(lhs));
+		else if(llvm::isa<VariableAST>(lhs))
+			lhs_v=generateVariable(llvm::dyn_cast<VariableAST>(lhs));
 
 		//Number?
-		else if(isa<NumberAST>(lhs)){
-			NumberAST *num=dyn_cast<NumberAST>(lhs);
+		else if(llvm::isa<NumberAST>(lhs)){
+			NumberAST *num=llvm::dyn_cast<NumberAST>(lhs);
 			lhs_v=generateNumber(num->getNumberValue());
 		}
 	}
 
 
 	//create rhs value
-	if(isa<BinaryExprAST>(rhs))
-		rhs_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(rhs));
+	if(llvm::isa<BinaryExprAST>(rhs))
+		rhs_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(rhs));
 
 	//Variable?
-	else if(isa<VariableAST>(rhs))
-		rhs_v=generateVariable(dyn_cast<VariableAST>(rhs));
+	else if(llvm::isa<VariableAST>(rhs))
+		rhs_v=generateVariable(llvm::dyn_cast<VariableAST>(rhs));
 
 	//Number?
-	else if(isa<NumberAST>(rhs)){
-		NumberAST *num=dyn_cast<NumberAST>(rhs);
+	else if(llvm::isa<NumberAST>(rhs)){
+		NumberAST *num=llvm::dyn_cast<NumberAST>(rhs);
 		rhs_v=generateNumber(num->getNumberValue());
 	}
 	
@@ -288,37 +293,37 @@ Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
   * @param CallExprAST
   * @return 生成したValueのポインタ　
   */
-Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
-	std::vector<Value*> arg_vec;
+llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
+	std::vector<llvm::Value*> arg_vec;
 	BaseAST *arg;
-	Value *arg_v;
-	Function *func=Mod->getFunction("main");
-	ValueSymbolTable &vs_table = func->getValueSymbolTable();
+	llvm::Value *arg_v;
+	llvm::Function *func=Mod->getFunction("main");
+	llvm::ValueSymbolTable &vs_table = func->getValueSymbolTable();
 	for(int i=0; ; i++){
 		if(!(arg=call_expr->getArgs(i)))
 			break;
 
 		//isCall
-		if(isa<CallExprAST>(arg))
-			arg_v=generateCallExpression(dyn_cast<CallExprAST>(arg));
+		if(llvm::isa<CallExprAST>(arg))
+			arg_v=generateCallExpression(llvm::dyn_cast<CallExprAST>(arg));
 
 		//isBinaryExpr
-		else if(isa<BinaryExprAST>(arg)){
-			BinaryExprAST *bin_expr = dyn_cast<BinaryExprAST>(arg);
-			arg_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(arg));
+		else if(llvm::isa<BinaryExprAST>(arg)){
+			BinaryExprAST *bin_expr = llvm::dyn_cast<BinaryExprAST>(arg);
+			arg_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(arg));
 			if(bin_expr->getOp()=="="){
-				VariableAST *var= dyn_cast<VariableAST>(bin_expr->getLHS());
+				VariableAST *var= llvm::dyn_cast<VariableAST>(bin_expr->getLHS());
 				arg_v=Builder->CreateLoad(vs_table.lookup(var->getName()), "arg_val");
 			}
 		}
 
 		//isVar
-		else if(isa<VariableAST>(arg))
-			arg_v=generateVariable(dyn_cast<VariableAST>(arg));
+		else if(llvm::isa<VariableAST>(arg))
+			arg_v=generateVariable(llvm::dyn_cast<VariableAST>(arg));
 		
 		//isNumber
-		else if(isa<NumberAST>(arg)){
-			NumberAST *num=dyn_cast<NumberAST>(arg);
+		else if(llvm::isa<NumberAST>(arg)){
+			NumberAST *num=llvm::dyn_cast<NumberAST>(arg);
 			arg_v=generateNumber(num->getNumberValue());
 		}
 		arg_vec.push_back(arg_v);
@@ -333,16 +338,16 @@ Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
   * @param  JumpStmtAST
   * @return 生成したValueのポインタ
   */
-Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
+llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
 	BaseAST *expr=jump_stmt->getExpr();
-	Value *ret_v;
-	if(isa<BinaryExprAST>(expr)){
-		ret_v=generateBinaryExpression(dyn_cast<BinaryExprAST>(expr));
-	}else if(isa<VariableAST>(expr)){
-		VariableAST *var=dyn_cast<VariableAST>(expr);
+	llvm::Value *ret_v;
+	if(llvm::isa<BinaryExprAST>(expr)){
+		ret_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(expr));
+	}else if(llvm::isa<VariableAST>(expr)){
+		VariableAST *var=llvm::dyn_cast<VariableAST>(expr);
 		ret_v = generateVariable(var);
-	}else if(isa<NumberAST>(expr)){
-		NumberAST *num=dyn_cast<NumberAST>(expr);
+	}else if(llvm::isa<NumberAST>(expr)){
+		NumberAST *num=llvm::dyn_cast<NumberAST>(expr);
 		ret_v=generateNumber(num->getNumberValue());
 
 	}
@@ -355,14 +360,15 @@ Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   * @param VariableAST
   * @return  生成したValueのポインタ
   */
-Value *CodeGen::generateVariable(VariableAST *var){
-	ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+llvm::Value *CodeGen::generateVariable(VariableAST *var){
+
+	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 	return Builder->CreateLoad(vs_table.lookup(var->getName()), "var_tmp");
 }
 
 
-Value *CodeGen::generateNumber(int value){
-	return ConstantInt::get(
-			Type::getInt32Ty(getGlobalContext()),
+llvm::Value *CodeGen::generateNumber(int value){
+	return llvm::ConstantInt::get(
+			llvm::Type::getInt32Ty(llvm::getGlobalContext()),
 			value);
 }

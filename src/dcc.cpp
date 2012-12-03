@@ -12,7 +12,7 @@
 #include "AST.hpp"
 #include "parser.hpp"
 #include "codegen.hpp"
-using namespace llvm;
+//using namespace llvm;
 
 
 /**
@@ -62,8 +62,7 @@ bool OptionParser::parseOption(){
 		}else if(Argv[i][0]=='-' && Argv[i][1] == 'h' && Argv[i][2] == '\0'){
 			printHelp();
 			return false;
-		}
-		else{
+		}else{
 			//inputfilename
 			InputFileName.assign(Argv[i]);
 		}
@@ -90,11 +89,11 @@ bool OptionParser::parseOption(){
  * main関数
  */
 int main(int argc, char **argv) {
-	InitializeNativeTarget();
-	sys::PrintStackTraceOnErrorSignal();
-	PrettyStackTraceProgram X(argc, argv);
+	llvm::InitializeNativeTarget();
+	llvm::sys::PrintStackTraceOnErrorSignal();
+	llvm::PrettyStackTraceProgram X(argc, argv);
 
-	EnableDebugBuffering = true;
+	llvm::EnableDebugBuffering = true;
 
 	OptionParser opt(argc, argv);
 	if(!opt.parseOption())
@@ -117,7 +116,7 @@ int main(int argc, char **argv) {
 	}
 
 	CodeGen *codegen=new CodeGen();
-	if(!codegen->doCodeGen(tunit, opt.getInputFileName())){
+	if(!codegen->doCodeGen(tunit, opt.getInputFileName()) ){
 		fprintf(stderr, "err at codegen\n");
 		SAFE_DELETE(parser);
 		SAFE_DELETE(codegen);
@@ -125,7 +124,7 @@ int main(int argc, char **argv) {
 	}
 
 	//get Module
-	Module &mod=codegen->getModule();
+	llvm::Module &mod=codegen->getModule();
 	if(tunit.empty()){
 		fprintf(stderr,"Module is empty");
 		SAFE_DELETE(parser);
@@ -133,14 +132,15 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	PassManager pm;
+	
+	llvm::PassManager pm;
 
 	//SSA化
 	pm.add(createPromoteMemoryToRegisterPass());
 
 	//出力
 	std::string error;
-	raw_fd_ostream raw_stream(opt.getOutputFileName().c_str(), error);
+	llvm::raw_fd_ostream raw_stream(opt.getOutputFileName().c_str(), error);
 	pm.add(createPrintModulePass(&raw_stream));
 	pm.run(mod);
 	raw_stream.close();

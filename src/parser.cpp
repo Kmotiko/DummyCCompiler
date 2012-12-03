@@ -197,7 +197,7 @@ PrototypeAST *Parser	::visitPrototype(){
 
 		if(Tokens->getCurType()==TOK_IDENTIFIER){
 			//引数の変数名に被りがないか確認
-			if(find(param_list.begin(), param_list.end(), Tokens->getCurString()) !=
+			if(std::find(param_list.begin(), param_list.end(), Tokens->getCurString()) !=
 					param_list.end()){
 				Tokens->applyTokenIndex(bkup);
 				return NULL;
@@ -264,7 +264,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 	}else if(var_decl=visitVariableDeclaration()){
 		while(var_decl){
 			var_decl->setDeclType(VariableDeclAST::local);
-			if(find(VariableTable.begin(), VariableTable.end(), var_decl->getName()) !=
+			if(std::find(VariableTable.begin(), VariableTable.end(), var_decl->getName()) !=
 					VariableTable.end()){
 				SAFE_DELETE(var_decl);
 				SAFE_DELETE(func_stmt);
@@ -422,7 +422,7 @@ BaseAST *Parser::visitAssignmentExpression(){
 	BaseAST *lhs;
 	if(Tokens->getCurType()==TOK_IDENTIFIER){
 		//変数が宣言されているか確認
-		if(find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
+		if(std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
 				VariableTable.end()){
 
 			lhs=new VariableAST(Tokens->getCurString());
@@ -469,42 +469,41 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 	if(!lhs)
 		lhs=visitMultiplicativeExpression(NULL);
 	BaseAST *rhs;
-	if(lhs){
-		//+
-		if(Tokens->getCurType()==TOK_SYMBOL &&
-				Tokens->getCurString()=="+"){
-			Tokens->getNextToken();
-			rhs=visitMultiplicativeExpression(NULL);
-			if(rhs){
-				return visitAdditiveExpression(
-						new BinaryExprAST("+", lhs, rhs)
-						);
-			}else{
-				SAFE_DELETE(lhs);
-				Tokens->applyTokenIndex(bkup);
-				return NULL;
-			}
-			
-		//-
-		}else if(Tokens->getCurType()==TOK_SYMBOL &&
-				Tokens->getCurString()=="-"){
-			Tokens->getNextToken();
-			rhs=visitMultiplicativeExpression(NULL);
-			if(rhs){
-				return visitAdditiveExpression(
-						new BinaryExprAST("-", lhs, rhs)
-						);
-			}else{
-				SAFE_DELETE(lhs);
-				Tokens->applyTokenIndex(bkup);
-				return NULL;
-			}	
-		}	
-		return lhs;
-	}else{
+
+	if(!lhs){
 		return NULL;
 	}
-
+	//+
+	if(Tokens->getCurType()==TOK_SYMBOL &&
+				Tokens->getCurString()=="+"){
+		Tokens->getNextToken();
+		rhs=visitMultiplicativeExpression(NULL);
+		if(rhs){
+			return visitAdditiveExpression(
+						new BinaryExprAST("+", lhs, rhs)
+					);
+		}else{
+			SAFE_DELETE(lhs);
+			Tokens->applyTokenIndex(bkup);
+			return NULL;
+		}
+			
+	//-
+	}else if(Tokens->getCurType()==TOK_SYMBOL &&
+				Tokens->getCurString()=="-"){
+		Tokens->getNextToken();
+		rhs=visitMultiplicativeExpression(NULL);
+		if(rhs){
+			return visitAdditiveExpression(
+						new BinaryExprAST("-", lhs, rhs)
+					);
+		}else{
+			SAFE_DELETE(lhs);
+			Tokens->applyTokenIndex(bkup);
+			return NULL;
+		}	
+	}	
+	return lhs;
 }
 
 
@@ -521,41 +520,41 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 	if(!lhs)
 		lhs=visitPostfixExpression();
 	BaseAST *rhs;
-	if(lhs){
-		//*
-		if(Tokens->getCurType()==TOK_SYMBOL &&
-				Tokens->getCurString()=="*"){
-			Tokens->getNextToken();
-			rhs=visitPostfixExpression();
-			if(rhs){
-				return visitMultiplicativeExpression(
-						new BinaryExprAST("*", lhs, rhs)
-						);
-			}else{
-				SAFE_DELETE(lhs);
-				Tokens->applyTokenIndex(bkup);
-				return NULL;
-			}
-			
-		///
-		}else if(Tokens->getCurType()==TOK_SYMBOL &&
-				Tokens->getCurString()=="/"){
-			Tokens->getNextToken();
-			rhs=visitPostfixExpression();
-			if(rhs){
-				return visitMultiplicativeExpression(
-						new BinaryExprAST("/", lhs, rhs)
-						);
-			}else{
-				SAFE_DELETE(lhs);
-				Tokens->applyTokenIndex(bkup);
-				return NULL;
-			}	
-		}	
-		return lhs;
-	}else{
-		return NULL;
+
+	if(!lhs){
+			return NULL;
 	}
+	// *
+	if(Tokens->getCurType()==TOK_SYMBOL &&
+				Tokens->getCurString()=="*"){
+		Tokens->getNextToken();
+		rhs=visitPostfixExpression();
+		if(rhs){
+			return visitMultiplicativeExpression(
+						new BinaryExprAST("*", lhs, rhs)
+					);
+		}else{
+			SAFE_DELETE(lhs);
+			Tokens->applyTokenIndex(bkup);
+			return NULL;
+		}
+			
+	// /
+	}else if(Tokens->getCurType()==TOK_SYMBOL &&
+				Tokens->getCurString()=="/"){
+		Tokens->getNextToken();
+		rhs=visitPostfixExpression();
+		if(rhs){
+			return visitMultiplicativeExpression(
+						new BinaryExprAST("/", lhs, rhs)
+					);
+		}else{
+			SAFE_DELETE(lhs);
+			Tokens->applyTokenIndex(bkup);
+			return NULL;
+		}	
+	}	
+	return lhs;
 }
 
 
@@ -655,7 +654,7 @@ BaseAST *Parser::visitPrimaryExpression(){
 
 	//VARIABLE_IDENTIFIER
 	if(Tokens->getCurType()==TOK_IDENTIFIER &&
-		(find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
+		(std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
 		VariableTable.end()) ){
 		std::string var_name=Tokens->getCurString();
 		Tokens->getNextToken();

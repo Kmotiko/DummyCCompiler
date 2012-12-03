@@ -7,7 +7,7 @@
 #include<vector>
 #include<llvm/Support/Casting.h>
 #include"APP.hpp"
-using namespace llvm;
+//using namespace llvm;
 
 /************************************************
 AST
