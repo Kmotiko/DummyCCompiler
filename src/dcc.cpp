@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 	llvm::PassManager pm;
 
 	//SSA化
-	pm.add(createPromoteMemoryToRegisterPass());
+	pm.add(llvm::createPromoteMemoryToRegisterPass());
 
 	//出力
 	std::string error;

@@ -55,8 +55,6 @@ class CodeGen{
 		llvm::Value *generateJumpStatement(JumpStmtAST *jump_stmt);
 		llvm::Value *generateVariable(VariableAST *var);
 		llvm::Value *generateNumber(int value);
-		bool linkModule(llvm::Module *dest, std::string file_name);
-
 };
 
 

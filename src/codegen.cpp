@@ -4,9 +4,7 @@
   * コンストラクタ
   */
 CodeGen::CodeGen(){
-	MDB = new llvm::MDBuilder(llvm::getGlobalContext());
-	mdn = MDB->createFPMath(0.5);
-	Builder = new llvm::IRBuilder<>(llvm::getGlobalContext(), mdn);
+	Builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
 }
 
 /**
