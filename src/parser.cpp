@@ -188,7 +188,12 @@ PrototypeAST *Parser	::visitPrototype(){
 
 	//parameter_list
 	std::vector<std::string> param_list;
+	bool is_first_param = true;
 	while(true){
+		//','
+		if(!is_first_param && Tokens->getCurType()==TOK_SYMBOL && Tokens->getCurString()==","){
+			Tokens->getNextToken();
+		}
 		if(Tokens->getCurType()==TOK_INT){
 			Tokens->getNextToken();
 		}else{
@@ -208,6 +213,7 @@ PrototypeAST *Parser	::visitPrototype(){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
 		}
+		is_first_param = false;
 	}
 	
 
