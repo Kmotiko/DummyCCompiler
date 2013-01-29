@@ -313,8 +313,7 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 	std::vector<llvm::Value*> arg_vec;
 	BaseAST *arg;
 	llvm::Value *arg_v;
-	llvm::Function *func=Mod->getFunction("main");
-	llvm::ValueSymbolTable &vs_table = func->getValueSymbolTable();
+	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 	for(int i=0; ; i++){
 		if(!(arg=call_expr->getArgs(i)))
 			break;
@@ -326,7 +325,11 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 		//isBinaryExpr
 		else if(llvm::isa<BinaryExprAST>(arg)){
 			BinaryExprAST *bin_expr = llvm::dyn_cast<BinaryExprAST>(arg);
+
+			//二項演算命令を生成
 			arg_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(arg));
+
+			//代入の時はLoad命令を追加
 			if(bin_expr->getOp()=="="){
 				VariableAST *var= llvm::dyn_cast<VariableAST>(bin_expr->getLHS());
 				arg_v=Builder->CreateLoad(vs_table.lookup(var->getName()), "arg_val");

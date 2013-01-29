@@ -12,7 +12,6 @@
 #include "AST.hpp"
 #include "parser.hpp"
 #include "codegen.hpp"
-//using namespace llvm;
 
 
 /**
@@ -33,7 +32,7 @@ class OptionParser
 		void printHelp();
 		std::string getInputFileName(){return InputFileName;} 		//入力ファイル名取得
 		std::string getOutputFileName(){return OutputFileName;} 	//出力ファイル名取得
-		std::string getLinkFileName(){return LinkFileName;} 	//出力ファイル名取得
+		std::string getLinkFileName(){return LinkFileName;} 	//リンク用ファイル名取得
 		bool getWithJit(){return WithJit;}		//JIT実行有無
 		bool parseOption();
 };
@@ -70,8 +69,10 @@ bool OptionParser::parseOption(){
 			LinkFileName.assign(Argv[++i]);
 		}else if(Argv[i][0]=='-' && Argv[i][1] == 'j' && Argv[i][2] == 'i' && Argv[i][3] == 't' && Argv[i][4] == '\0'){
 			WithJit = true;
+		}else if(Argv[i][0]=='-'){
+			fprintf(stderr,"%s は不明なオプションです\n", Argv[i]);
+			return false;
 		}else{
-			//inputfilename
 			InputFileName.assign(Argv[i]);
 		}
 	}
@@ -106,6 +107,12 @@ int main(int argc, char **argv) {
 	OptionParser opt(argc, argv);
 	if(!opt.parseOption())
 	  exit(1);
+
+	//check
+	if(opt.getInputFileName().length()==0){
+		fprintf(stderr,"入力ファイル名が指定されていません\n");
+		exit(1);
+	}
 
 	//lex and parse
 	Parser *parser=new Parser(opt.getInputFileName());

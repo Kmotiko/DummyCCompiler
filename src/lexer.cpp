@@ -16,6 +16,8 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 	bool iscomment=false;
 
 	ifs.open(input_filename.c_str(), std::ios::in);
+	if(!ifs)
+		return NULL;
 	while(ifs && getline(ifs, cur_line)){
 		char next_char;
 		std::string line;
