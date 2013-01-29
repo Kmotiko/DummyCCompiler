@@ -33,13 +33,11 @@ class CodeGen{
 		llvm::Function *CurFunc;		//現在コード生成中のFunction
 		llvm::Module *Mod;				//生成したModule を格納
 		llvm::IRBuilder<> *Builder;	//LLVM-IRを生成するIRBuilder クラス
-		llvm::MDBuilder *MDB;
-		llvm::MDNode *mdn;
 
 	public:
 		CodeGen();
 		~CodeGen();
-		bool doCodeGen(TranslationUnitAST &tunit, std::string name);
+		bool doCodeGen(TranslationUnitAST &tunit, std::string name, std::string link_file, bool with_jit);
 		llvm::Module &getModule();
 
 

@@ -20,10 +20,27 @@ CodeGen::~CodeGen(){
   * @param  TranslationUnitAST　Module名(入力ファイル名)
   * @return 成功時：true　失敗時:false
   */
-bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name){
+bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name, 
+		std::string link_file, bool with_jit=false){
 
 	if(!generateTranslationUnit(tunit, name)){
 		return false;
+	}
+
+	//LinkFileの指定があったらModuleをリンク
+	if( !link_file.empty() && !linkModule(Mod, link_file) )
+		return false;
+
+	//JITのフラグが立っていたらJIT
+	if(with_jit){
+		llvm::ExecutionEngine *EE = llvm::EngineBuilder(Mod).create();
+		llvm::EngineBuilder(Mod).create();
+			llvm::Function *F;
+		if(!(F=Mod->getFunction("main")))
+			return false;
+
+		int (*fp)() = (int (*)())EE->getPointerToFunction(F);
+		fprintf(stderr,"%d\n",fp());
 	}
 
 	return true;
@@ -296,8 +313,7 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 	std::vector<llvm::Value*> arg_vec;
 	BaseAST *arg;
 	llvm::Value *arg_v;
-	llvm::Function *func=Mod->getFunction("main");
-	llvm::ValueSymbolTable &vs_table = func->getValueSymbolTable();
+	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 	for(int i=0; ; i++){
 		if(!(arg=call_expr->getArgs(i)))
 			break;
@@ -309,7 +325,11 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 		//isBinaryExpr
 		else if(llvm::isa<BinaryExprAST>(arg)){
 			BinaryExprAST *bin_expr = llvm::dyn_cast<BinaryExprAST>(arg);
+
+			//二項演算命令を生成
 			arg_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(arg));
+
+			//代入の時はLoad命令を追加
 			if(bin_expr->getOp()=="="){
 				VariableAST *var= llvm::dyn_cast<VariableAST>(bin_expr->getLHS());
 				arg_v=Builder->CreateLoad(vs_table.lookup(var->getName()), "arg_val");
@@ -360,7 +380,6 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   * @return  生成したValueのポインタ
   */
 llvm::Value *CodeGen::generateVariable(VariableAST *var){
-
 	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
 	return Builder->CreateLoad(vs_table.lookup(var->getName()), "var_tmp");
 }
@@ -370,4 +389,20 @@ llvm::Value *CodeGen::generateNumber(int value){
 	return llvm::ConstantInt::get(
 			llvm::Type::getInt32Ty(llvm::getGlobalContext()),
 			value);
+}
+
+
+bool CodeGen::linkModule(llvm::Module *dest, std::string file_name){
+	llvm::SMDiagnostic err;
+	llvm::Module *link_mod = llvm::ParseIRFile(file_name, err, llvm::getGlobalContext());
+	if(!link_mod)
+		return false;
+
+	std::string err_msg;
+	if(llvm::Linker::LinkModules(dest, link_mod, llvm::Linker::DestroySource, &err_msg))
+		return false;
+
+	SAFE_DELETE(link_mod);
+
+	return true;
 }
