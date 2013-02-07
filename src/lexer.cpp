@@ -69,11 +69,7 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 		
 			//数字
 			}else if(isdigit(next_char)){
-				char tmp_char[2];
-				tmp_char[0] = next_char;
-				tmp_char[1] = '\0';
-				//if(atoi(tmp_char)==0){
-				if(next_char==0){
+				if(next_char=='0'){
 					token_str += next_char;
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
 				}else{

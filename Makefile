@@ -34,9 +34,11 @@ INC_FLAGS = -I$(INC_DIR)
 
 
 all:$(FRONT_OBJ) 
+	mkdir -p $(BIN_DIR)
 	$(CC) -g $(FRONT_OBJ) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -ldl -o $(TOOL)
 
 $(MAIN_OBJ):$(MAIN_SRC_PATH)
+	mkdir -p $(OBJ_DIR)
 	$(CC) -g $(MAIN_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(MAIN_OBJ) 
 
 $(LEXER_OBJ):$(LEXER_SRC_PATH)
