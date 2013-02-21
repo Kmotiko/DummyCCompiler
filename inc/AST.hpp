@@ -53,7 +53,7 @@ class BaseAST{
 
 	public:
 	BaseAST(AstID id):ID(id){}
-	~BaseAST(){}
+	virtual ~BaseAST(){}
 	AstID getValueID() const {return ID;}
 };
 
@@ -173,6 +173,7 @@ class  BinaryExprAST : public BaseAST{
 	BinaryExprAST(std::string op, BaseAST *lhs, BaseAST *rhs)
 		: BaseAST(BinaryExprID), Op(op), LHS(lhs), RHS(rhs){
 		}
+	~BinaryExprAST(){SAFE_DELETE(LHS);SAFE_DELETE(RHS);}
 	static inline bool classof(BinaryExprAST const*){return true;}
 	static inline bool classof(BaseAST const* base){
 		return base->getValueID()==BinaryExprID;
@@ -257,7 +258,7 @@ class NumberAST : public BaseAST {
 	int Val;
 	public:
 	NumberAST(int val) : BaseAST(NumberID), Val(val){};
-	~NumberAST();
+	~NumberAST(){}
 	int getNumberValue(){return Val;}
 	static inline bool classof(NumberAST const*){return true;}
 	static inline bool classof(BaseAST const* base){
