@@ -5,6 +5,7 @@
   */
 CodeGen::CodeGen(){
 	Builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+	Mod = NULL;
 }
 
 /**
@@ -12,6 +13,7 @@ CodeGen::CodeGen(){
   */
 CodeGen::~CodeGen(){
 	SAFE_DELETE(Builder);
+	SAFE_DELETE(Mod);
 }
 
 

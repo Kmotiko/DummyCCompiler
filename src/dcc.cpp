@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 
 	//get Module
 	llvm::Module &mod=codegen->getModule();
-	if(tunit.empty()){
+	if(mod.empty()){
 		fprintf(stderr,"Module is empty");
 		SAFE_DELETE(parser);
 		SAFE_DELETE(codegen);
@@ -160,7 +160,6 @@ int main(int argc, char **argv) {
 	pm.add(createPrintModulePass(&raw_stream));
 	pm.run(mod);
 	raw_stream.close();
-	mod.dump();
 
 	//delete
 	SAFE_DELETE(parser);
