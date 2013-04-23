@@ -60,7 +60,7 @@ typedef class Token{
 /**
   * 切り出したToken格納用クラス
   */
-class TokenSet{
+class TokenStream{
 	public:
 
 	private:
@@ -70,8 +70,8 @@ class TokenSet{
 	protected:
 
 	public:
-		TokenSet():CurIndex(0){}
-		~TokenSet();
+		TokenStream():CurIndex(0){}
+		~TokenStream();
 
 
 		bool ungetToken(int Times=1);
@@ -97,5 +97,5 @@ class TokenSet{
 
 };
 
-TokenSet *LexicalAnalysis(std::string input_filename);
+TokenStream *LexicalAnalysis(std::string input_filename);
 #endif

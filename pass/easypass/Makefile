@@ -34,4 +34,4 @@ clean:
 	rm -rf $(PASS_OBJ) $(LIB)
 
 run:
-	opt -load $(LIB) -easypass -debug-pass=Structure  $(SAMPLE_DIR)/test.ll -S > /dev/null
+	opt -load $(LIB) -easypass -debug-pass=Structure $(SAMPLE_DIR)/test.ll -S > /dev/null
