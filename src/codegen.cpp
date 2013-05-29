@@ -22,30 +22,10 @@ CodeGen::~CodeGen(){
   * @param  TranslationUnitAST　Module名(入力ファイル名)
   * @return 成功時：true　失敗時:false
   */
-bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name, 
-		std::string link_file, bool with_jit=false){
+bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name){
 
-	if(!generateTranslationUnit(tunit, name)){
-		return false;
-	}
+	return generateTranslationUnit(tunit, name);
 
-	//LinkFileの指定があったらModuleをリンク
-	if( !link_file.empty() && !linkModule(Mod, link_file) )
-		return false;
-
-	//JITのフラグが立っていたらJIT
-	if(with_jit){
-		llvm::ExecutionEngine *EE = llvm::EngineBuilder(Mod).create();
-		llvm::EngineBuilder(Mod).create();
-			llvm::Function *F;
-		if(!(F=Mod->getFunction("main")))
-			return false;
-
-		int (*fp)() = (int (*)())EE->getPointerToFunction(F);
-		fprintf(stderr,"%d\n",fp());
-	}
-
-	return true;
 }
 
 
@@ -393,18 +373,3 @@ llvm::Value *CodeGen::generateNumber(int value){
 			value);
 }
 
-
-bool CodeGen::linkModule(llvm::Module *dest, std::string file_name){
-	llvm::SMDiagnostic err;
-	llvm::Module *link_mod = llvm::ParseIRFile(file_name, err, llvm::getGlobalContext());
-	if(!link_mod)
-		return false;
-
-	std::string err_msg;
-	if(llvm::Linker::LinkModules(dest, link_mod, llvm::Linker::DestroySource, &err_msg))
-		return false;
-
-	SAFE_DELETE(link_mod);
-
-	return true;
-}

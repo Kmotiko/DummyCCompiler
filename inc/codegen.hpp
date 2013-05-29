@@ -37,7 +37,7 @@ class CodeGen{
 	public:
 		CodeGen();
 		~CodeGen();
-		bool doCodeGen(TranslationUnitAST &tunit, std::string name, std::string link_file, bool with_jit);
+		bool doCodeGen(TranslationUnitAST &tunit, std::string name);
 		llvm::Module &getModule();
 
 

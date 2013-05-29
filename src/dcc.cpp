@@ -65,10 +65,6 @@ bool OptionParser::parseOption(){
 		}else if(Argv[i][0]=='-' && Argv[i][1] == 'h' && Argv[i][2] == '\0'){
 			printHelp();
 			return false;
-		}else if(Argv[i][0]=='-' && Argv[i][1] == 'l' && Argv[i][2] == '\0'){
-			LinkFileName.assign(Argv[++i]);
-		}else if(Argv[i][0]=='-' && Argv[i][1] == 'j' && Argv[i][2] == 'i' && Argv[i][3] == 't' && Argv[i][4] == '\0'){
-			WithJit = true;
 		}else if(Argv[i][0]=='-'){
 			fprintf(stderr,"%s は不明なオプションです\n", Argv[i]);
 			return false;
@@ -131,8 +127,7 @@ int main(int argc, char **argv) {
 	}
 
 	CodeGen *codegen=new CodeGen();
-	if(!codegen->doCodeGen(tunit, opt.getInputFileName(), 
-				opt.getLinkFileName(), opt.getWithJit()) ){
+	if(!codegen->doCodeGen(tunit, opt.getInputFileName()) ){
 		fprintf(stderr, "err at codegen\n");
 		SAFE_DELETE(parser);
 		SAFE_DELETE(codegen);
@@ -150,9 +145,6 @@ int main(int argc, char **argv) {
 
 	
 	llvm::PassManager pm;
-
-	//SSA化
-	pm.add(llvm::createPromoteMemoryToRegisterPass());
 
 	//出力
 	std::string error;
