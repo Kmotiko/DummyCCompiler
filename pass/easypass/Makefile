@@ -7,7 +7,6 @@ BIN_DIR = $(PROJECT_DIR)/bin
 
 SAMPLE_DIR = $(PROJECT_DIR)/sample
 
-MAIN_SRC = dcc.cpp
 PASS_SRC = easypass.cpp
 
 PASS_SRC_PATH = $(SRC_DIR)/$(PASS_SRC)
@@ -32,6 +31,9 @@ $(PASS_OBJ):$(PASS_SRC_PATH)
 
 clean:
 	rm -rf $(PASS_OBJ) $(LIB)
+
+sample:$(SAMPLE_DIR)/test.dc 
+	../../bin/dcc $(SAMPLE_DIR)/test.dc -o $(SAMPLE_DIR)/test.ll
 
 run:
 	opt -load $(LIB) -easypass -debug-pass=Structure $(SAMPLE_DIR)/test.ll -S > /dev/null
