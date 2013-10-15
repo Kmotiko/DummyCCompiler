@@ -4,6 +4,7 @@ SRC_DIR = $(PROJECT_DIR)/src
 INC_DIR = $(PROJECT_DIR)/inc
 OBJ_DIR = $(PROJECT_DIR)/obj
 BIN_DIR = $(PROJECT_DIR)/bin
+LIB_DIR = $(PROJECT_DIR)/lib
 
 SAMPLE_DIR = $(PROJECT_DIR)/sample
 
@@ -57,10 +58,13 @@ clean:
 	rm -rf $(FRONT_OBJ) $(TOOL)
 
 run:
-	$(TOOL) -o $(SAMPLE_DIR)/test.ll -l ./lib/printnum.ll $(SAMPLE_DIR)/test.dc -jit
+	$(TOOL) -o $(SAMPLE_DIR)/test.ll -l $(LIB_DIR)/printnum.ll $(SAMPLE_DIR)/test.dc -jit
 
 link:
-	llvm-link $(SAMPLE_DIR)/test.ll ./lib/printnum.ll -S -o  $(SAMPLE_DIR)/link_test.ll
+	llvm-link $(SAMPLE_DIR)/test.ll $(LIB_DIR)/printnum.ll -S -o  $(SAMPLE_DIR)/link_test.ll
+
+lib:$(LIB_DIR)/printnum.c
+	clang -emit-llvm -S -O -o $(LIB_DIR)/printnum.ll $(LIB_DIR)/printnum.c
 
 do:
 	lli $(SAMPLE_DIR)/link_test.ll
