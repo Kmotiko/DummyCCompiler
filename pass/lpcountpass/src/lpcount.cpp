@@ -2,12 +2,12 @@
 
 bool LPCountPass::runOnLoop(llvm::Loop *L, llvm::LPPassManager &LPM){
     //終了ブロックを取得
-    llvm::BasicBlock *exit_block = L->getExitingBlock();
-    if(exit_block==NULL)
+    llvm::BasicBlock *exiting_block = L->getExitingBlock();
+    if(exiting_block==NULL)
 	    return false;
 
     //終了ブロックのTerminatorInstを取得
-    llvm::BranchInst *branch_inst = llvm::dyn_cast<llvm::BranchInst>(exit_block->getTerminator());
+    llvm::BranchInst *branch_inst = llvm::dyn_cast<llvm::BranchInst>(exiting_block->getTerminator());
     if(branch_inst==NULL)
 	    return false;
 
