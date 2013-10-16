@@ -16,9 +16,9 @@
 #include<llvm/Module.h>
 #include<llvm/Metadata.h>
 #include<llvm/Support/Casting.h>
-#include<llvm/Support/IRBuilder.h>
+#include<llvm/IRBuilder.h>
 #include<llvm/Support/IRReader.h>
-#include<llvm/Support/MDBuilder.h>
+#include<llvm/MDBuilder.h>
 #include<llvm/ValueSymbolTable.h>
 #include"APP.hpp"
 #include"AST.hpp"

@@ -7,6 +7,6 @@ int test(int j){
 int main(){
 	int i;
 	i=10;
-    printnum(test(i));
+	printnum(test(i));
 	return 0;
 }

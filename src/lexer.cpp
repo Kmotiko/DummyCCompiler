@@ -5,10 +5,10 @@
 /**
  * トークン切り出し関数
  * @param 字句解析対象ファイル名
- * @return 切り出したトークンを格納したTokenSet
+ * @return 切り出したトークンを格納したTokenStream
  */
-TokenSet *LexicalAnalysis(std::string input_filename){
-	TokenSet *tokens=new TokenSet();
+TokenStream *LexicalAnalysis(std::string input_filename){
+	TokenStream *tokens=new TokenStream();
 	std::ifstream ifs;
 	std::string cur_line;
 	std::string token_str;
@@ -153,7 +153,7 @@ TokenSet *LexicalAnalysis(std::string input_filename){
 /**
   * デストラクタ
   */
-TokenSet::~TokenSet(){
+TokenStream::~TokenStream(){
 	for(int i=0; i<Tokens.size(); i++){
 		SAFE_DELETE(Tokens[i]);
 	}
@@ -165,7 +165,7 @@ TokenSet::~TokenSet(){
   * トークン取得
   * @return CureIndex番目のToken
   */
-Token TokenSet::getToken(){
+Token TokenStream::getToken(){
 	return *Tokens[CurIndex];
 }
 
@@ -174,7 +174,7 @@ Token TokenSet::getToken(){
   * インデックスを一つ増やして次のトークンに進める
   * @return 成功時：true　失敗時：false
   */
-bool TokenSet::getNextToken(){
+bool TokenStream::getNextToken(){
 	int size=Tokens.size();
 	if(--size==CurIndex){
 		return false;
@@ -190,7 +190,7 @@ bool TokenSet::getNextToken(){
 /**
   * インデックスをtimes回戻す
   */
-bool TokenSet::ungetToken(int times){
+bool TokenStream::ungetToken(int times){
 	for(int i=0; i<times;i++){
 		if(CurIndex == 0)
 			return false;
@@ -204,7 +204,7 @@ bool TokenSet::ungetToken(int times){
 /**
   * 格納されたトークン一覧を表示する
   */
-bool TokenSet::printTokens(){
+bool TokenStream::printTokens(){
 	std::vector<Token*>::iterator titer = Tokens.begin();
 	while( titer != Tokens.end() ){
 		fprintf(stdout,"%d:", (*titer)->getTokenType());

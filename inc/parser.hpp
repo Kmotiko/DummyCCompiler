@@ -20,7 +20,7 @@ typedef class Parser{
 	public:
 
 	private:
-		TokenSet *Tokens;
+		TokenStream *Tokens;
 		TranslationUnitAST *TU;
 
 		//意味解析用各種識別子表

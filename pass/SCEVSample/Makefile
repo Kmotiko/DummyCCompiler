@@ -7,13 +7,13 @@ BIN_DIR = $(PROJECT_DIR)/bin
 
 SAMPLE_DIR = $(PROJECT_DIR)/sample
 
-PASS_SRC = easypass.cpp
+PASS_SRC = scevsample.cpp
 
 PASS_SRC_PATH = $(SRC_DIR)/$(PASS_SRC)
 
 PASS_OBJ = $(OBJ_DIR)/$(PASS_SRC:.cpp=.o)
 
-LIB = $(BIN_DIR)/easypass.so
+LIB = $(BIN_DIR)/scevsample.so
 CONFIG = llvm-config
 LLVM_FLAGS = --cxxflags
 LLVM_FLAGS2 = --ldflags --libs
@@ -32,8 +32,9 @@ $(PASS_OBJ):$(PASS_SRC_PATH)
 clean:
 	rm -rf $(PASS_OBJ) $(LIB)
 
-sample:$(SAMPLE_DIR)/test.dc 
-	../../bin/dcc $(SAMPLE_DIR)/test.dc -o $(SAMPLE_DIR)/test.ll
+sample:$(SAMPLE_DIR)/loop.c 
+	clang -emit-llvm -S $(SAMPLE_DIR)/loop.c -o $(SAMPLE_DIR)/loop.ll
+	opt -mem2reg -S $(SAMPLE_DIR)/loop.ll -o $(SAMPLE_DIR)/loop_m2r.ll
 
 run:
-	opt -load $(LIB) -easypass -debug-pass=Structure $(SAMPLE_DIR)/test.ll -S > /dev/null
+	opt -load $(LIB) -scevsample -debug-pass=Structure  $(SAMPLE_DIR)/loop_m2r.ll -S > /dev/null

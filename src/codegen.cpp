@@ -257,15 +257,15 @@ llvm::Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 	}else{
 		//lhs=?
 		//Binary?
-		if(llvm::isa<BinaryExprAST>(lhs))
+		if(llvm::isa<BinaryExprAST>(lhs)){
 			lhs_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(lhs));
 
 		//Variable?
-		else if(llvm::isa<VariableAST>(lhs))
+        }else if(llvm::isa<VariableAST>(lhs)){
 			lhs_v=generateVariable(llvm::dyn_cast<VariableAST>(lhs));
 
 		//Number?
-		else if(llvm::isa<NumberAST>(lhs)){
+        }else if(llvm::isa<NumberAST>(lhs)){
 			NumberAST *num=llvm::dyn_cast<NumberAST>(lhs);
 			lhs_v=generateNumber(num->getNumberValue());
 		}
@@ -273,18 +273,23 @@ llvm::Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 
 
 	//create rhs value
-	if(llvm::isa<BinaryExprAST>(rhs))
+	if(llvm::isa<BinaryExprAST>(rhs)){
 		rhs_v=generateBinaryExpression(llvm::dyn_cast<BinaryExprAST>(rhs));
 
+	//CallExpr?
+    }else if(llvm::isa<CallExprAST>(rhs)){
+		rhs_v=generateCallExpression(llvm::dyn_cast<CallExprAST>(rhs));
+
 	//Variable?
-	else if(llvm::isa<VariableAST>(rhs))
+    }else if(llvm::isa<VariableAST>(rhs)){
 		rhs_v=generateVariable(llvm::dyn_cast<VariableAST>(rhs));
 
 	//Number?
-	else if(llvm::isa<NumberAST>(rhs)){
+    }else if(llvm::isa<NumberAST>(rhs)){
 		NumberAST *num=llvm::dyn_cast<NumberAST>(rhs);
 		rhs_v=generateNumber(num->getNumberValue());
 	}
+
 	
 	
 	if(bin_expr->getOp()=="="){
