@@ -75,7 +75,7 @@ class TokenStream{
 
 
 		bool ungetToken(int Times=1);
-		bool getNextToken();
+		bool nextToken();
 		bool pushToken(Token *token){
 			Tokens.push_back(token);
 			return true;

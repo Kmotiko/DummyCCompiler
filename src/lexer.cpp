@@ -30,13 +30,13 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 
 			//コメントアウト読み飛ばし
 			if(iscomment){
-				if( (length-index) < 2 
-					||	(cur_line.at(index) != '*') 
-					|| (cur_line.at(index++) != '/') ){
-					continue;
-				}else{
+				if( ((length-index) >= 1)
+					&& (next_char == '*') 
+                    && (cur_line.at(index) == '/') ){
 					iscomment=false;
+                    index++;
 				}
+                continue;
 			}
 		
 			//EOF
@@ -49,15 +49,14 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 
 			//IDENTIFIER
 			}else if(isalpha(next_char)){
-				token_str += next_char;
-				next_char = cur_line.at(index++);
 				while(isalnum(next_char)){
 					token_str += next_char;
-					next_char = cur_line.at(index++);
 					if(index==length)
 						break;
+					next_char = cur_line.at(index++);
 				}
-				index--;
+				if(!isalnum(next_char))
+				    index--;
 		
 				if(token_str == "int"){
 					next_token = new Token(token_str, TOK_INT, line_num);
@@ -73,33 +72,33 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 					token_str += next_char;
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
 				}else{
-					token_str += next_char;
-					next_char = cur_line.at(index++);
 					while(isdigit(next_char)){
 						token_str += next_char;
+					    if(index==length)
+						    break;
 						next_char = cur_line.at(index++);
 					}
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
-					index--;
+					if(!isdigit(next_char))
+					    index--;
 				}
 		
 			//コメント or '/'
 			}else if(next_char == '/'){
 				token_str += next_char;
-				next_char = cur_line.at(index++);
 
 				//コメントの場合
-				if(next_char == '/'){
+				if( ((length-index) >= 1) && (cur_line.at(index) == '/') ){
 						break;
 		
 				//コメントの場合
-				}else if(next_char == '*'){
+                }else if( ((length-index) >= 1) && (cur_line.at(index) == '*') ){
+                    index++;
 					iscomment=true;
 					continue;
 		
 				//DIVIDER('/')
 				}else{
-					index--;
 					next_token = new Token(token_str, TOK_SYMBOL, line_num);
 				}
 		
@@ -174,7 +173,7 @@ Token TokenStream::getToken(){
   * インデックスを一つ増やして次のトークンに進める
   * @return 成功時：true　失敗時：false
   */
-bool TokenStream::getNextToken(){
+bool TokenStream::nextToken(){
 	int size=Tokens.size();
 	if(--size==CurIndex){
 		return false;

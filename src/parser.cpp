@@ -104,7 +104,7 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
 			return NULL;
 		}
 		PrototypeTable[proto->getName()]=proto->getParamNum();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return proto;
 	}else{
 		SAFE_DELETE(proto);
@@ -158,7 +158,7 @@ PrototypeAST *Parser	::visitPrototype(){
 
 	//type_specifier
 	if(Tokens->getCurType()==TOK_INT){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 	}else{
 		return NULL;
 	}
@@ -167,7 +167,7 @@ PrototypeAST *Parser	::visitPrototype(){
 	//IDENTIFIER
 	if(Tokens->getCurType()==TOK_IDENTIFIER){
 		func_name=Tokens->getCurString();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 	}else{
 		Tokens->ungetToken(1);	//unget TOK_INT
 		return NULL;
@@ -175,7 +175,7 @@ PrototypeAST *Parser	::visitPrototype(){
 
 	//'('
 	if(Tokens->getCurString()=="("){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 	}else{
 		Tokens->ungetToken(2);	//unget TOK_INT IDENTIFIER
 		return NULL;
@@ -188,10 +188,10 @@ PrototypeAST *Parser	::visitPrototype(){
 	while(true){
 		//','
 		if(!is_first_param && Tokens->getCurType()==TOK_SYMBOL && Tokens->getCurString()==","){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 		}
 		if(Tokens->getCurType()==TOK_INT){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 		}else{
 			break;
 		}
@@ -204,7 +204,7 @@ PrototypeAST *Parser	::visitPrototype(){
 				return NULL;
 			}
 			param_list.push_back(Tokens->getCurString());
-			Tokens->getNextToken();
+			Tokens->nextToken();
 		}else{
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
@@ -215,7 +215,7 @@ PrototypeAST *Parser	::visitPrototype(){
 
 	//')'
 	if(Tokens->getCurString()==")"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return new PrototypeAST(func_name, param_list);
 	}else{
 		Tokens->applyTokenIndex(bkup);
@@ -234,7 +234,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 
 	//{
 	if(Tokens->getCurString()=="{"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 	}else{
 		return NULL;
 	}
@@ -302,7 +302,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 
 	//}
 	if(Tokens->getCurString()=="}"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return func_stmt;
 	}else{
 		SAFE_DELETE(func_stmt);
@@ -322,7 +322,7 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 
 	//INT
 	if(Tokens->getCurType()==TOK_INT){
-		Tokens->getNextToken();	
+		Tokens->nextToken();	
 	}else{
 		return NULL;
 	}
@@ -330,7 +330,7 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 	//IDENTIFIER
 	if(Tokens->getCurType()==TOK_IDENTIFIER){
 		name=Tokens->getCurString();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 	}else{
 		Tokens->ungetToken(1);
 		return NULL;
@@ -338,7 +338,7 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 	
 	//';'
 	if(Tokens->getCurString()==";"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return new VariableDeclAST(name);
 	}else{
 		Tokens->ungetToken(2);	
@@ -372,11 +372,11 @@ BaseAST *Parser::visitExpressionStatement(){
 
 	//NULL Expression
 	if(Tokens->getCurString()==";"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return new NullExprAST();
 	}else if((assign_expr=visitAssignmentExpression())){
 		if(Tokens->getCurString()==";"){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			return assign_expr;
 		}
 	}
@@ -394,14 +394,14 @@ BaseAST *Parser::visitJumpStatement(){
 	BaseAST *expr;
 
 	if(Tokens->getCurType() == TOK_RETURN){
-		Tokens->getNextToken();	
+		Tokens->nextToken();	
 		if(!(expr=visitAssignmentExpression()) ){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
 		}
 
 		if(Tokens->getCurString()==";"){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			return new JumpStmtAST(expr);
 		}else{
 			Tokens->applyTokenIndex(bkup);
@@ -428,11 +428,11 @@ BaseAST *Parser::visitAssignmentExpression(){
 				VariableTable.end()){
 
 			lhs=new VariableAST(Tokens->getCurString());
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			BaseAST *rhs;
 			if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="="){
-				Tokens->getNextToken();
+				Tokens->nextToken();
 				if(rhs=visitAdditiveExpression(NULL)){
 					return new BinaryExprAST("=", lhs, rhs);
 				}else{
@@ -478,7 +478,7 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 	//+
 	if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="+"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		rhs=visitMultiplicativeExpression(NULL);
 		if(rhs){
 			return visitAdditiveExpression(
@@ -493,7 +493,7 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 	//-
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="-"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		rhs=visitMultiplicativeExpression(NULL);
 		if(rhs){
 			return visitAdditiveExpression(
@@ -529,7 +529,7 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 	// *
 	if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="*"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		rhs=visitPostfixExpression();
 		if(rhs){
 			return visitMultiplicativeExpression(
@@ -544,7 +544,7 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 	// /
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="/"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		rhs=visitPostfixExpression();
 		if(rhs){
 			return visitMultiplicativeExpression(
@@ -590,7 +590,7 @@ BaseAST *Parser::visitPostfixExpression(){
 
 		//関数名取得
 		std::string Callee=Tokens->getCurString();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 
 		//LEFT PALEN
 		if(Tokens->getCurType()!=TOK_SYMBOL ||
@@ -599,7 +599,7 @@ BaseAST *Parser::visitPostfixExpression(){
 			return NULL;
 		}
 
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		//argument list
 		std::vector<BaseAST*> args;
 		BaseAST *assign_expr=visitAssignmentExpression();
@@ -607,7 +607,7 @@ BaseAST *Parser::visitPostfixExpression(){
 			args.push_back(assign_expr);
 			while(Tokens->getCurType()==TOK_SYMBOL &&
 					Tokens->getCurString()==","){
-				Tokens->getNextToken();
+				Tokens->nextToken();
 
 				//IDENTIFIER
 				assign_expr=visitAssignmentExpression();
@@ -630,7 +630,7 @@ BaseAST *Parser::visitPostfixExpression(){
 		//RIGHT PALEN
 		if(Tokens->getCurType()==TOK_SYMBOL &&
 					Tokens->getCurString()==")"){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			return new CallExprAST(Callee, args);
 		}else{
 			for(int i=0;i<args.size();i++)
@@ -659,22 +659,22 @@ BaseAST *Parser::visitPrimaryExpression(){
 		(std::find(VariableTable.begin(), VariableTable.end(), Tokens->getCurString()) !=
 		VariableTable.end()) ){
 		std::string var_name=Tokens->getCurString();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return new VariableAST(var_name);
 
 	//integer
 	}else if(Tokens->getCurType()==TOK_DIGIT){
 		int val=Tokens->getCurNumVal();
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		return new NumberAST(val);
 
 	//integer(-)
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 			Tokens->getCurString()=="-"){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 		if(Tokens->getCurType()==TOK_DIGIT){
 			int val=Tokens->getCurNumVal();
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			return new NumberAST(-val);
 		}else{
 			Tokens->applyTokenIndex(bkup);
@@ -684,7 +684,7 @@ BaseAST *Parser::visitPrimaryExpression(){
 	// '(' expression ')'
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 			Tokens->getCurString()=="("){
-		Tokens->getNextToken();
+		Tokens->nextToken();
 
 		//expression
 		BaseAST *assign_expr;
@@ -695,7 +695,7 @@ BaseAST *Parser::visitPrimaryExpression(){
 
 		//RIGHT PALEN
 		if(Tokens->getCurString()==")"){
-			Tokens->getNextToken();
+			Tokens->nextToken();
 			return assign_expr;
 		}else{
 			SAFE_DELETE(assign_expr);
