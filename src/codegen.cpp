@@ -1,10 +1,11 @@
 #include "codegen.hpp"
 
+static llvm::LLVMContext Context;
 /**
   * コンストラクタ
   */
 CodeGen::CodeGen(){
-	Builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+	Builder = new llvm::IRBuilder<>(Context);
 	Mod = NULL;
 }
 
@@ -22,28 +23,13 @@ CodeGen::~CodeGen(){
   * @param  TranslationUnitAST　Module名(入力ファイル名)
   * @return 成功時：true　失敗時:false
   */
-bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name, 
+bool CodeGen::doCodeGen(TranslationUnitAST &tunit, std::string name,
 		std::string link_file, bool with_jit=false){
 
 	if(!generateTranslationUnit(tunit, name)){
 		return false;
 	}
 
-	//LinkFileの指定があったらModuleをリンク
-	if( !link_file.empty() && !linkModule(Mod, link_file) )
-		return false;
-
-	//JITのフラグが立っていたらJIT
-	if(with_jit){
-		llvm::ExecutionEngine *EE = llvm::EngineBuilder(Mod).create();
-		llvm::EngineBuilder(Mod).create();
-			llvm::Function *F;
-		if(!(F=Mod->getFunction("main")))
-			return false;
-
-		int (*fp)() = (int (*)())EE->getPointerToFunction(F);
-		fprintf(stderr,"%d\n",fp());
-	}
 
 	return true;
 }
@@ -56,7 +42,7 @@ llvm::Module &CodeGen::getModule(){
 	if(Mod)
 		return *Mod;
 	else
-		return *(new llvm::Module("null", llvm::getGlobalContext()));
+		return *(new llvm::Module("null", Context));
 }
 
 
@@ -66,7 +52,7 @@ llvm::Module &CodeGen::getModule(){
   * @return 成功時：true　失敗時：false　
   */
 bool CodeGen::generateTranslationUnit(TranslationUnitAST &tunit, std::string name){
-	Mod = new llvm::Module(name, llvm::getGlobalContext());
+	Mod = new llvm::Module(name, Context);
 	//funtion declaration
 	for(int i=0; ; i++){
 		PrototypeAST *proto=tunit.getPrototype(i);
@@ -105,7 +91,7 @@ llvm::Function *CodeGen::generateFunctionDefinition(FunctionAST *func_ast,
 		return NULL;
 	}
 	CurFunc = func;
-	llvm::BasicBlock *bblock=llvm::BasicBlock::Create(llvm::getGlobalContext(),
+	llvm::BasicBlock *bblock=llvm::BasicBlock::Create(Context,
 									"entry",func);
 	Builder->SetInsertPoint(bblock);
 	generateFunctionStatement(func_ast->getBody());
@@ -123,7 +109,7 @@ llvm::Function *CodeGen::generatePrototype(PrototypeAST *proto, llvm::Module *mo
 	//already declared?
 	llvm::Function *func=mod->getFunction(proto->getName());
 	if(func){
-		if(func->arg_size()==proto->getParamNum() && 
+		if(func->arg_size()==proto->getParamNum() &&
 				func->empty()){
 			return func;
 		}else{
@@ -134,15 +120,15 @@ llvm::Function *CodeGen::generatePrototype(PrototypeAST *proto, llvm::Module *mo
 
 	//create arg_types
 	std::vector<llvm::Type*> int_types(proto->getParamNum(),
-								llvm::Type::getInt32Ty(llvm::getGlobalContext()));
+								llvm::Type::getInt32Ty(Context));
 
 	//create func type
 	llvm::FunctionType *func_type = llvm::FunctionType::get(
-							llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+							llvm::Type::getInt32Ty(Context),
 							int_types,false
 							);
 	//create function
-	func=llvm::Function::Create(func_type, 
+	func=llvm::Function::Create(func_type,
 							llvm::Function::ExternalLinkage,
 							proto->getName(),
 							mod);
@@ -200,15 +186,15 @@ llvm::Value *CodeGen::generateFunctionStatement(FunctionStmtAST *func_stmt){
 llvm::Value *CodeGen::generateVariableDeclaration(VariableDeclAST *vdecl){
 	//create alloca
 	llvm::AllocaInst *alloca=Builder->CreateAlloca(
-			llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+			llvm::Type::getInt32Ty(Context),
 			0,
 			vdecl->getName());
 
 	//if args alloca
 	if(vdecl->getType()==VariableDeclAST::param){
 		//store args
-		llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
-		Builder->CreateStore(vs_table.lookup(vdecl->getName().append("_arg")), alloca);
+		llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+		Builder->CreateStore(vs_table->lookup(vdecl->getName().append("_arg")), alloca);
 	}
 	//ValueMap[vdecl->getName()]=alloca;
 	return alloca;
@@ -250,8 +236,8 @@ llvm::Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 	if(bin_expr->getOp()=="="){
 		//lhs is variable
 		VariableAST *lhs_var=llvm::dyn_cast<VariableAST>(lhs);
-		llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
-		lhs_v = vs_table.lookup(lhs_var->getName());
+		llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+		lhs_v = vs_table->lookup(lhs_var->getName());
 
 	//other operand
 	}else{
@@ -290,8 +276,8 @@ llvm::Value *CodeGen::generateBinaryExpression(BinaryExprAST *bin_expr){
 		rhs_v=generateNumber(num->getNumberValue());
 	}
 
-	
-	
+
+
 	if(bin_expr->getOp()=="="){
 		//store
 		return Builder->CreateStore(rhs_v, lhs_v);
@@ -320,7 +306,7 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 	std::vector<llvm::Value*> arg_vec;
 	BaseAST *arg;
 	llvm::Value *arg_v;
-	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
+	llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
 	for(int i=0; ; i++){
 		if(!(arg=call_expr->getArgs(i)))
 			break;
@@ -339,14 +325,14 @@ llvm::Value *CodeGen::generateCallExpression(CallExprAST *call_expr){
 			//代入の時はLoad命令を追加
 			if(bin_expr->getOp()=="="){
 				VariableAST *var= llvm::dyn_cast<VariableAST>(bin_expr->getLHS());
-				arg_v=Builder->CreateLoad(vs_table.lookup(var->getName()), "arg_val");
+				arg_v=Builder->CreateLoad(vs_table->lookup(var->getName()), "arg_val");
 			}
 		}
 
 		//isVar
 		else if(llvm::isa<VariableAST>(arg))
 			arg_v=generateVariable(llvm::dyn_cast<VariableAST>(arg));
-		
+
 		//isNumber
 		else if(llvm::isa<NumberAST>(arg)){
 			NumberAST *num=llvm::dyn_cast<NumberAST>(arg);
@@ -387,29 +373,13 @@ llvm::Value *CodeGen::generateJumpStatement(JumpStmtAST *jump_stmt){
   * @return  生成したValueのポインタ
   */
 llvm::Value *CodeGen::generateVariable(VariableAST *var){
-	llvm::ValueSymbolTable &vs_table = CurFunc->getValueSymbolTable();
-	return Builder->CreateLoad(vs_table.lookup(var->getName()), "var_tmp");
+	llvm::ValueSymbolTable *vs_table = CurFunc->getValueSymbolTable();
+	return Builder->CreateLoad(vs_table->lookup(var->getName()), "var_tmp");
 }
 
 
 llvm::Value *CodeGen::generateNumber(int value){
 	return llvm::ConstantInt::get(
-			llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+			llvm::Type::getInt32Ty(Context),
 			value);
-}
-
-
-bool CodeGen::linkModule(llvm::Module *dest, std::string file_name){
-	llvm::SMDiagnostic err;
-	llvm::Module *link_mod = llvm::ParseIRFile(file_name, err, llvm::getGlobalContext());
-	if(!link_mod)
-		return false;
-
-	std::string err_msg;
-	if(llvm::Linker::LinkModules(dest, link_mod, llvm::Linker::DestroySource, &err_msg))
-		return false;
-
-	SAFE_DELETE(link_mod);
-
-	return true;
 }
