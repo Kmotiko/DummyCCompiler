@@ -1,12 +1,11 @@
-int test(int j){
+int test(int j)
 	int i;
 	i=j*10;
 	return i;
-}
 
-int main(){
+
+int main()
 	int i;
 	i=10;
-    printnum(test(i));
+	printnum(test(i));
 	return 0;
-}
