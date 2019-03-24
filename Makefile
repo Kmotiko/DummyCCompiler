@@ -30,29 +30,29 @@ FRONT_OBJ = $(MAIN_OBJ) $(LEXER_OBJ) $(AST_OBJ) $(PARSER_OBJ) $(CODEGEN_OBJ)
 
 TOOL = $(BIN_DIR)/dcc
 CONFIG = llvm-config
-LLVM_FLAGS = --cxxflags --ldflags --libs
+LLVM_FLAGS = --cxxflags --ldflags --libs --system-libs
 INC_FLAGS = -I$(INC_DIR)
 
 
-all:$(FRONT_OBJ) 
+all:$(FRONT_OBJ)
 	mkdir -p $(BIN_DIR)
 	$(CC) -g $(FRONT_OBJ) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -ldl -o $(TOOL)
 
 $(MAIN_OBJ):$(MAIN_SRC_PATH)
 	mkdir -p $(OBJ_DIR)
-	$(CC) -g $(MAIN_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(MAIN_OBJ) 
+	$(CC) -g $(MAIN_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(MAIN_OBJ)
 
 $(LEXER_OBJ):$(LEXER_SRC_PATH)
-	$(CC) -g $(LEXER_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(LEXER_OBJ) 
+	$(CC) -g $(LEXER_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(LEXER_OBJ)
 
 $(AST_OBJ):$(AST_SRC_PATH)
-	$(CC) -g $(AST_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(AST_OBJ) 
+	$(CC) -g $(AST_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(AST_OBJ)
 
 $(PARSER_OBJ):$(PARSER_SRC_PATH)
-	$(CC) -g $(PARSER_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(PARSER_OBJ) 
+	$(CC) -g $(PARSER_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(PARSER_OBJ)
 
 $(CODEGEN_OBJ):$(CODEGEN_SRC_PATH)
-	$(CC) -g $(CODEGEN_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(CODEGEN_OBJ) 
+	$(CC) -g $(CODEGEN_SRC_PATH) $(INC_FLAGS) `$(CONFIG) $(LLVM_FLAGS)` -c -o $(CODEGEN_OBJ)
 
 clean:
 	rm -rf $(FRONT_OBJ) $(TOOL)
