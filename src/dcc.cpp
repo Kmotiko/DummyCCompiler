@@ -1,7 +1,7 @@
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Module.h"
-#include "llvm/PassManager.h"
+#include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/FormattedStream.h"
@@ -83,7 +83,7 @@ bool OptionParser::parseOption(){
 	if (OutputFileName.empty() && (len > 2) &&
 		ifn[len-3] == '.' &&
 		((ifn[len-2] == 'd' && ifn[len-1] == 'c'))) {
-		OutputFileName = std::string(ifn.begin(), ifn.end()-3); 
+		OutputFileName = std::string(ifn.begin(), ifn.end()-3);
 		OutputFileName += ".s";
 	} else if(OutputFileName.empty()){
 		OutputFileName = ifn;
@@ -99,7 +99,7 @@ bool OptionParser::parseOption(){
  */
 int main(int argc, char **argv) {
 	llvm::InitializeNativeTarget();
-	llvm::sys::PrintStackTraceOnErrorSignal();
+	llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
 	llvm::PrettyStackTraceProgram X(argc, argv);
 
 	llvm::EnableDebugBuffering = true;
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 	}
 
 	CodeGen *codegen=new CodeGen();
-	if(!codegen->doCodeGen(tunit, opt.getInputFileName(), 
+	if(!codegen->doCodeGen(tunit, opt.getInputFileName(),
 				opt.getLinkFileName(), opt.getWithJit()) ){
 		fprintf(stderr, "err at codegen\n");
 		SAFE_DELETE(parser);
@@ -148,22 +148,22 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	
-	llvm::PassManager pm;
+
+	llvm::legacy::PassManager pm;
 
 	//SSA化
 	pm.add(llvm::createPromoteMemoryToRegisterPass());
 
 	//出力
-	std::string error;
-	llvm::raw_fd_ostream raw_stream(opt.getOutputFileName().c_str(), error);
-	pm.add(createPrintModulePass(&raw_stream));
+	std::error_code error;
+	llvm::raw_fd_ostream raw_stream(opt.getOutputFileName().c_str(), error, llvm::sys::fs::F_None);
+	mod.print(raw_stream, nullptr);
 	pm.run(mod);
 	raw_stream.close();
 
 	//delete
 	SAFE_DELETE(parser);
 	SAFE_DELETE(codegen);
-  
+
 	return 0;
 }
