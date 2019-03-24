@@ -14,6 +14,8 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 	std::string token_str;
 	int line_num=0;
 	bool iscomment=false;
+	int indent=0;//indent level
+	int indent_length=2;
 
 	ifs.open(input_filename.c_str(), std::ios::in);
 	if(!ifs)
@@ -22,33 +24,66 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 		char next_char;
 		std::string line;
 		Token *next_token;
-		int index=0;				
+		int index=0;
 		int length=cur_line.length();
-	
-		while(index<length){	
+		int ishead=true;
+
+		while(index<length){
 			next_char = cur_line.at(index++);
 
 			//コメントアウト読み飛ばし
 			if(iscomment){
-				if( (length-index) < 2 
-					||	(cur_line.at(index) != '*') 
+				if( (length-index) < 2
+					||	(cur_line.at(index) != '*')
 					|| (cur_line.at(index++) != '/') ){
 					continue;
 				}else{
 					iscomment=false;
 				}
 			}
-		
+
 			//EOF
 			if(next_char == EOF){
 				token_str = EOF;
 				next_token = new Token(token_str, TOK_EOF, line_num);
-		
+			//Space or INDENT
 			}else if(isspace(next_char)){
-				continue;
+				if(!ishead)continue;
+					token_str += next_char;
+					while(isspace(cur_line.at(index))){
+						token_str += next_char;
+						next_char = cur_line.at(index++);
+					}
+					if(!indent)indent_length=token_str.size();
+					//インデントが増えていればINDENT,減っていればDEDENT, そのままなら無視
+					if(token_str.size() > indent*indent_length){
+						next_token = new Token("INDENT", TOK_INDENT, line_num);
+						indent++;
+						ishead = false;
+					}else if(indent && token_str.size() < indent*indent_length){
+						printf("%d\n", indent*indent_length);
+						printf("%d\n", token_str.size());
 
-			//IDENTIFIER
-			}else if(isalpha(next_char)){
+						next_token = new Token("DEDENT", TOK_DEDENT, line_num);
+						indent--;
+						ishead = false;
+					}else{
+						ishead = false;
+						token_str.clear();
+						continue;
+					}
+				// Indentレベル１からのDEDENT
+			}else if(!isspace(next_char) && ishead && indent){
+					next_token = new Token("DEDENT", TOK_DEDENT, line_num);
+					indent--;
+					while(indent){
+						tokens->pushToken(next_token);
+						indent--;
+					}
+					ishead=false;
+					index--;//今選択している文字をまきもどし
+				//IDENTIFIER
+				}else if(isalpha(next_char)){
 				token_str += next_char;
 				next_char = cur_line.at(index++);
 				while(isalnum(next_char)){
@@ -58,20 +93,24 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 						break;
 				}
 				index--;
-		
+
 				if(token_str == "int"){
 					next_token = new Token(token_str, TOK_INT, line_num);
+					ishead = false;
 				}else if(token_str == "return"){
 					next_token = new Token(token_str, TOK_RETURN, line_num);
+					ishead = false;
 				}else{
 					next_token = new Token(token_str, TOK_IDENTIFIER, line_num);
+					ishead = false;
 				}
-		
+
 			//数字
 			}else if(isdigit(next_char)){
 				if(next_char=='0'){
 					token_str += next_char;
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
+					ishead = false;
 				}else{
 					token_str += next_char;
 					next_char = cur_line.at(index++);
@@ -80,9 +119,10 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 						next_char = cur_line.at(index++);
 					}
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
+					ishead = false;
 					index--;
 				}
-		
+
 			//コメント or '/'
 			}else if(next_char == '/'){
 				token_str += next_char;
@@ -91,18 +131,19 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 				//コメントの場合
 				if(next_char == '/'){
 						break;
-		
+
 				//コメントの場合
 				}else if(next_char == '*'){
 					iscomment=true;
 					continue;
-		
+
 				//DIVIDER('/')
 				}else{
 					index--;
 					next_token = new Token(token_str, TOK_SYMBOL, line_num);
+					ishead = false;
 				}
-		
+
 			//それ以外(記号)
 			}else{
 				if(next_char == '*' ||
@@ -117,6 +158,7 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 						next_char == '}'){
 					token_str += next_char;
 					next_token = new Token(token_str, TOK_SYMBOL, line_num);
+					ishead = false;
 
 				//解析不能字句
 				}else{
@@ -125,7 +167,7 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 					return NULL;
 				}
 			}
-		
+
 			//Tokensに追加
 			tokens->pushToken(next_token);
 			token_str.clear();
@@ -138,6 +180,12 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 
 	//EOFの確認
 	if(ifs.eof()){
+		while(indent){
+			tokens->pushToken(
+				new Token("DEDENT", TOK_DEDENT, line_num)
+			);
+			indent--;
+		}
 		tokens->pushToken(
 				new Token(token_str, TOK_EOF, line_num)
 				);
@@ -147,7 +195,7 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 	ifs.close();
 	return tokens;
 }
-	
+
 
 
 /**
@@ -180,7 +228,7 @@ bool TokenStream::getNextToken(){
 		return false;
 	}else if( CurIndex < size ){
 		CurIndex++;
-		return true;	
+		return true;
 	}else{
 		return false;
 	}
@@ -214,5 +262,3 @@ bool TokenStream::printTokens(){
 	}
 	return true;
 }
-
-
