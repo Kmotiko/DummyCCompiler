@@ -236,7 +236,7 @@ PrototypeAST *Parser	::visitPrototype(){
 FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 	int bkup=Tokens->getCurIndex();
 
-	//{
+	//INDENT
 	if(Tokens->getCurString()=="INDENT"){
 		Tokens->getNextToken();
 	}else{
@@ -304,7 +304,7 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 		return NULL;
 	}
 
-	//}
+	//DEDENT
 	if(Tokens->getCurString()=="DEDENT"){
 		Tokens->getNextToken();
 		return func_stmt;
