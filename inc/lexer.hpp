@@ -20,6 +20,7 @@ enum TokenType{
 	TOK_INT,				//INT
 	TOK_INDENT,			//INDENT
 	TOK_DEDENT,			//DEDENT
+	TOK_NEWLINE,		//改行
 	TOK_RETURN,			//RETURN
 	TOK_EOF				//EOF
 };

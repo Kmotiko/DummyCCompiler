@@ -30,7 +30,7 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 
 		while(index<length){
 			next_char = cur_line.at(index++);
-
+			// printf("%c\n", next_char);
 			//コメントアウト読み飛ばし
 			if(iscomment){
 				if( (length-index) < 2
@@ -84,16 +84,14 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 					index--;//今選択している文字をまきもどし
 				//IDENTIFIER
 				}else if(isalpha(next_char)){
-				token_str += next_char;
-				next_char = cur_line.at(index++);
-				while(isalnum(next_char)){
-					token_str += next_char;
-					next_char = cur_line.at(index++);
-					if(index==length)
-						break;
-				}
-				index--;
-
+					while(isalnum(next_char)){
+						token_str += next_char;
+						if(index==length)
+							break;
+						next_char = cur_line.at(index++);
+					}
+					if(!isalnum(next_char))
+					    index--;
 				if(token_str == "int"){
 					next_token = new Token(token_str, TOK_INT, line_num);
 					ishead = false;
@@ -112,15 +110,15 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
 					ishead = false;
 				}else{
-					token_str += next_char;
-					next_char = cur_line.at(index++);
 					while(isdigit(next_char)){
 						token_str += next_char;
+					    if(index==length)
+						    break;
 						next_char = cur_line.at(index++);
 					}
+					if(!isdigit(next_char))index--;
 					next_token = new Token(token_str, TOK_DIGIT, line_num);
 					ishead = false;
-					index--;
 				}
 
 			//コメント or '/'
@@ -172,7 +170,7 @@ TokenStream *LexicalAnalysis(std::string input_filename){
 			tokens->pushToken(next_token);
 			token_str.clear();
 		}
-
+		if(!ishead)tokens->pushToken(new Token("NEWLINE", TOK_NEWLINE, line_num));
 		token_str.clear();
 		line_num++;
 	}
@@ -262,3 +260,11 @@ bool TokenStream::printTokens(){
 	}
 	return true;
 }
+
+// int main(int argc, char** argv){
+//   std::string inputFile;
+//   inputFile=argv[1];
+//   TokenStream *Test = LexicalAnalysis(inputFile);
+//   Test->printTokens();
+//   return 0;
+// }
