@@ -236,6 +236,10 @@ PrototypeAST *Parser	::visitPrototype(){
 FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 	int bkup=Tokens->getCurIndex();
 
+	//NEWLINE
+	if(Tokens->getCurString()=="NEWLINE"){
+		Tokens->getNextToken();
+	}
 	//INDENT
 	if(Tokens->getCurString()=="INDENT"){
 		Tokens->getNextToken();
@@ -341,8 +345,10 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 	}
 
 	//';'
-	if(Tokens->getCurString()==";"){
+	if(Tokens->getCurString()==";" || Tokens->getCurString()=="NEWLINE"){
 		Tokens->getNextToken();
+		if(Tokens->getCurString()=="NEWLINE")//改行なら読み飛ばし
+			Tokens->getNextToken();
 		return new VariableDeclAST(name);
 	}else{
 		Tokens->ungetToken(2);
@@ -375,12 +381,16 @@ BaseAST *Parser::visitExpressionStatement(){
 	BaseAST *assign_expr;
 
 	//NULL Expression
-	if(Tokens->getCurString()==";"){
+	if(Tokens->getCurString()==";" || Tokens->getCurString()=="NEWLINE"){
 		Tokens->getNextToken();
+		if(Tokens->getCurString()=="NEWLINE")//改行なら読み飛ばし
+			Tokens->getNextToken();
 		return new NullExprAST();
 	}else if((assign_expr=visitAssignmentExpression())){
-		if(Tokens->getCurString()==";"){
+		if(Tokens->getCurString()==";" || Tokens->getCurString()=="NEWLINE"){
 			Tokens->getNextToken();
+			if(Tokens->getCurString()=="NEWLINE")//改行なら読み飛ばし
+				Tokens->getNextToken();
 			return assign_expr;
 		}
 	}
@@ -404,8 +414,10 @@ BaseAST *Parser::visitJumpStatement(){
 			return NULL;
 		}
 
-		if(Tokens->getCurString()==";"){
+		if(Tokens->getCurString()==";" || Tokens->getCurString()=="NEWLINE"){
 			Tokens->getNextToken();
+			if(Tokens->getCurString()=="NEWLINE")//改行なら読み飛ばし
+				Tokens->getNextToken();
 			return new JumpStmtAST(expr);
 		}else{
 			Tokens->applyTokenIndex(bkup);
