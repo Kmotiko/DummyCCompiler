@@ -1,6 +1,6 @@
 #ifndef LEXER_HPP
 #define LEXER_HPP
-	
+
 #include<cstdio>
 #include<cstdlib>
 #include<fstream>
@@ -18,6 +18,8 @@ enum TokenType{
 	TOK_DIGIT,			//数字
 	TOK_SYMBOL,			//記号
 	TOK_INT,				//INT
+	TOK_INDENT,			//INDENT
+	TOK_DEDENT,			//DEDENT
 	TOK_RETURN,			//RETURN
 	TOK_EOF				//EOF
 };
@@ -37,7 +39,7 @@ typedef class Token{
 
 
 	public:
-	Token(std::string string, TokenType type, int line) 
+	Token(std::string string, TokenType type, int line)
 		: TokenString(string), Type(type), Line(line){
 		if(type == TOK_DIGIT)
 			Number = atoi(string.c_str());
@@ -52,7 +54,7 @@ typedef class Token{
 	int getNumberValue(){return Number;};
 	bool setLine(int line){Line=line;return true;}
 	int getLine(){return Line;}
-	
+
 }Token;
 
 
@@ -87,8 +89,8 @@ class TokenStream{
 		bool printTokens();
 		int getCurIndex(){return CurIndex;}
 		bool applyTokenIndex(int index){CurIndex=index;return true;}
-		
-		
+
+
 
 	private:
 

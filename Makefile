@@ -57,6 +57,9 @@ $(CODEGEN_OBJ):$(CODEGEN_SRC_PATH)
 clean:
 	rm -rf $(FRONT_OBJ) $(TOOL)
 
+test:
+	./bin/dcc ./sample/test.dp -o ./sample/test.ll
+
 run:
 	$(TOOL) -o $(SAMPLE_DIR)/test.ll -l $(LIB_DIR)/printnum.ll $(SAMPLE_DIR)/test.dc -jit
 

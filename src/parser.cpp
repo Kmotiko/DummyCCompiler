@@ -64,7 +64,7 @@ bool Parser::visitTranslationUnit(){
   * ExternalDeclaration用構文解析クラス
   * 解析したPrototyupeとFunctionASTをTranslationUitに追加
   * @param TranslationUnitAST
-  * @return true 
+  * @return true
   */
 bool Parser::visitExternalDeclaration(
 		TranslationUnitAST *tunit
@@ -103,7 +103,7 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
 		if( PrototypeTable.find(proto->getName()) != PrototypeTable.end() ||
 			(FunctionTable.find(proto->getName()) != FunctionTable.end() &&
 			FunctionTable[proto->getName()] != proto->getParamNum() ) ){
-			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str()); 
+			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str());
 			SAFE_DELETE(proto);
 			return NULL;
 		}
@@ -115,7 +115,7 @@ PrototypeAST *Parser::visitFunctionDeclaration(){
 		Tokens->applyTokenIndex(bkup);
 		return NULL;
 	}
-	
+
 }
 
 
@@ -132,7 +132,7 @@ FunctionAST *Parser::visitFunctionDefinition(){
 	}else if( (PrototypeTable.find(proto->getName()) != PrototypeTable.end() &&
 				PrototypeTable[proto->getName()] != proto->getParamNum() ) ||
 				FunctionTable.find(proto->getName()) != FunctionTable.end()){
-			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str()); 
+			fprintf(stderr, "Function：%s is redefined" ,proto->getName().c_str());
 			SAFE_DELETE(proto);
 			return NULL;
 	}
@@ -215,7 +215,7 @@ PrototypeAST *Parser	::visitPrototype(){
 		}
 		is_first_param = false;
 	}
-	
+
 
 	//')'
 	if(Tokens->getCurString()==")"){
@@ -236,8 +236,8 @@ PrototypeAST *Parser	::visitPrototype(){
 FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 	int bkup=Tokens->getCurIndex();
 
-	//{
-	if(Tokens->getCurString()=="{"){
+	//INDENT
+	if(Tokens->getCurString()=="INDENT"){
 		Tokens->getNextToken();
 	}else{
 		return NULL;
@@ -304,8 +304,8 @@ FunctionStmtAST *Parser::visitFunctionStatement(PrototypeAST *proto){
 		return NULL;
 	}
 
-	//}
-	if(Tokens->getCurString()=="}"){
+	//DEDENT
+	if(Tokens->getCurString()=="DEDENT"){
 		Tokens->getNextToken();
 		return func_stmt;
 	}else{
@@ -326,11 +326,11 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 
 	//INT
 	if(Tokens->getCurType()==TOK_INT){
-		Tokens->getNextToken();	
+		Tokens->getNextToken();
 	}else{
 		return NULL;
 	}
-	
+
 	//IDENTIFIER
 	if(Tokens->getCurType()==TOK_IDENTIFIER){
 		name=Tokens->getCurString();
@@ -339,13 +339,13 @@ VariableDeclAST *Parser::visitVariableDeclaration(){
 		Tokens->ungetToken(1);
 		return NULL;
 	}
-	
+
 	//';'
 	if(Tokens->getCurString()==";"){
 		Tokens->getNextToken();
 		return new VariableDeclAST(name);
 	}else{
-		Tokens->ungetToken(2);	
+		Tokens->ungetToken(2);
 		return NULL;
 	}
 }
@@ -398,7 +398,7 @@ BaseAST *Parser::visitJumpStatement(){
 	BaseAST *expr;
 
 	if(Tokens->getCurType() == TOK_RETURN){
-		Tokens->getNextToken();	
+		Tokens->getNextToken();
 		if(!(expr=visitAssignmentExpression()) ){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
@@ -493,7 +493,7 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
 		}
-			
+
 	//-
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="-"){
@@ -507,8 +507,8 @@ BaseAST *Parser::visitAdditiveExpression(BaseAST *lhs){
 			SAFE_DELETE(lhs);
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
-		}	
-	}	
+		}
+	}
 	return lhs;
 }
 
@@ -544,7 +544,7 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
 		}
-			
+
 	// /
 	}else if(Tokens->getCurType()==TOK_SYMBOL &&
 				Tokens->getCurString()=="/"){
@@ -558,8 +558,8 @@ BaseAST *Parser::visitMultiplicativeExpression(BaseAST *lhs){
 			SAFE_DELETE(lhs);
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
-		}	
-	}	
+		}
+	}
 	return lhs;
 }
 
@@ -630,7 +630,7 @@ BaseAST *Parser::visitPostfixExpression(){
 			Tokens->applyTokenIndex(bkup);
 			return NULL;
 		}
-			
+
 		//RIGHT PALEN
 		if(Tokens->getCurType()==TOK_SYMBOL &&
 					Tokens->getCurString()==")"){
@@ -711,4 +711,3 @@ BaseAST *Parser::visitPrimaryExpression(){
 
 	return NULL;
 }
-
